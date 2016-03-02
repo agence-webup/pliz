@@ -1,0 +1,4 @@
+package: webup/pliz
+import:
+- package: github.com/jawher/mow.cli
+- package: gopkg.in/yaml.v2

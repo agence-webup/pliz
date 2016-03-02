@@ -1,0 +1,20 @@
+default:
+  src-prepare:
+    commands:
+      - ["echo", "bonjour les petits éléphants!"]
+      -
+        - sh
+        - "-c"
+        - nom="Bruno";
+          if [ $nom = "Bruno" ];
+          then
+            echo "Salut Bruno !";
+          fi;
+  install:
+    commands:
+      - ["echo", "Installation en cours..."]
+
+custom:
+  - name: custom_example
+    commands:
+      - ["echo", "Action custom"]
