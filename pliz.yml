@@ -1,6 +1,8 @@
 config_files:
-  .env.example: .env
-  docker_ports.sample.yml: docker_ports.yml
+  - sample: .env.sample
+    target: .env
+  # - sample: docker_ports.sample.yml
+  #   target: docker_ports.yml
 
 enabled_tasks:
   - npm

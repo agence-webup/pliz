@@ -2,12 +2,10 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 
 	"github.com/jawher/mow.cli"
-	"gopkg.in/yaml.v2"
 )
 
 type CommandList [][]string
@@ -23,11 +21,6 @@ type Action struct {
 type CustomAction struct {
 	Name   string
 	Action `yaml:",inline"`
-}
-
-type Config struct {
-	Default DefaultActionsConfig `yaml:"default"`
-	Custom  []CustomAction       `yaml:"custom"`
 }
 
 type Command struct {
@@ -56,17 +49,9 @@ func main() {
 	var config Config
 
 	app.Before = func() {
-		configFile, err := ioutil.ReadFile("pliz.yml")
+		err := GetConfig(&config)
 		if err != nil {
-			fmt.Println(err)
-			return
-		}
-
-		// fmt.Println(string(configFile))
-		err = yaml.Unmarshal(configFile, &config)
-		if err != nil {
-			fmt.Println(err)
-			return
+			cli.Exit(1)
 		}
 	}
 
@@ -89,13 +74,38 @@ func main() {
 
 		cmd.Action = func() {
 
-			action := config.Default.SrcPrepare
+			/*
+			 * 1. Duplicate and edit the config files (.env, docker_ports.yml...)
+			 */
+
 			fmt.Printf("\n ▶ ️ Prepare config files...\n")
 
-			if *forced {
-				fmt.Println("FORCEDDDDD")
+			for _, configFile := range config.ConfigFiles {
+				created := false
+
+				// if the 'force' option is set, then we consider that the file has been created
+				if *forced {
+					created = true
+				}
+
+				// check if the file exists. If not, duplicate the sample
+				if _, err := os.Stat(configFile.Target); os.IsNotExist(err) {
+					os.Link(configFile.Sample, configFile.Target)
+					created = true
+				}
+
+				// edit the file
+				if created {
+					cmd := NewCommand([]string{"vim", configFile.Target})
+					cmd.Execute()
+				}
 			}
 
+			/*
+			 * 2nd step
+			 */
+
+			action := config.Default.SrcPrepare
 			for _, commandDefinition := range action.Commands {
 				cmd := NewCommand(commandDefinition)
 				cmd.Execute()
