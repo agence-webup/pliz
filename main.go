@@ -84,10 +84,17 @@ func main() {
 	})
 
 	app.Command("install", "Install (or update) the project dependencies (docker containers, npm, composer...)", func(cmd *cli.Cmd) {
+
+		forced := cmd.BoolOpt("f force", false, "Force the installation process")
+
 		cmd.Action = func() {
 
 			action := config.Default.SrcPrepare
 			fmt.Printf("\n ▶ ️ Prepare config files...\n")
+
+			if *forced {
+				fmt.Println("FORCEDDDDD")
+			}
 
 			for _, commandDefinition := range action.Commands {
 				cmd := NewCommand(commandDefinition)
@@ -100,6 +107,23 @@ func main() {
 			for _, commandDefinition := range action.Commands {
 				cmd := NewCommand(commandDefinition)
 				cmd.Execute()
+			}
+		}
+	})
+
+	app.Command("tasks", "Describe the available tasks", func(cmd *cli.Cmd) {
+		cmd.Action = func() {
+			tasks := []string{
+				"npm",
+				"bower",
+				"composer",
+				"gulp",
+				"db-update",
+			}
+
+			fmt.Println("Available tasks:")
+			for _, task := range tasks {
+				fmt.Printf("   %s\n", task)
 			}
 		}
 	})

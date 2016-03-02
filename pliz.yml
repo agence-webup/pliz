@@ -1,3 +1,11 @@
+config_files:
+  .env.example: .env
+  docker_ports.sample.yml: docker_ports.yml
+
+enabled_tasks:
+  - npm
+  - bower
+
 default:
   src-prepare:
     commands:
