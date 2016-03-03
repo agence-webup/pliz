@@ -3,7 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
-	"os/exec"
+	"webup/pliz/helpers"
+	"webup/pliz/tasks"
 
 	"github.com/jawher/mow.cli"
 )
@@ -23,26 +24,6 @@ type CustomAction struct {
 	Action `yaml:",inline"`
 }
 
-type Command struct {
-	Name string
-	Args []string
-}
-
-func NewCommand(list []string) Command {
-	name := list[0]
-	args := list[1:]
-
-	return Command{Name: name, Args: args}
-}
-
-func (c Command) Execute() {
-	cmd := exec.Command(c.Name, c.Args...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	cmd.Stdin = os.Stdin
-	cmd.Run()
-}
-
 func main() {
 	app := cli.App("pliz", "Manage projects building")
 
@@ -57,7 +38,7 @@ func main() {
 
 	app.Command("ps", "List running containers", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
-			command := Command{Name: "docker", Args: []string{"ps"}}
+			command := helpers.Command{Name: "docker", Args: []string{"ps"}}
 			command.Execute()
 		}
 	})
@@ -96,18 +77,33 @@ func main() {
 
 				// edit the file
 				if created {
-					cmd := NewCommand([]string{"vim", configFile.Target})
+					cmd := helpers.NewCommand([]string{"vim", configFile.Target})
 					cmd.Execute()
 				}
 			}
 
 			/*
-			 * 2nd step
+			 * 2. Run the enabled tasks
 			 */
+
+			fmt.Printf("\n ▶ ️ Run enabled tasks...\n\n")
+
+			for _, taskName := range config.EnabledTasks {
+				if taskName == "npm" {
+					task := tasks.NpmTask()
+
+					if task.Execute() {
+						fmt.Printf("Task '%s' executed.\n", task.Name)
+					} else {
+						// fmt.Printf("Task '%s' skipped.\n", task.Name)
+						// fmt.Println(err)
+					}
+				}
+			}
 
 			action := config.Default.SrcPrepare
 			for _, commandDefinition := range action.Commands {
-				cmd := NewCommand(commandDefinition)
+				cmd := helpers.NewCommand(commandDefinition)
 				cmd.Execute()
 			}
 
@@ -115,7 +111,7 @@ func main() {
 			fmt.Printf("\n ▶ ️ Install the project...\n")
 
 			for _, commandDefinition := range action.Commands {
-				cmd := NewCommand(commandDefinition)
+				cmd := helpers.NewCommand(commandDefinition)
 				cmd.Execute()
 			}
 		}
@@ -146,7 +142,7 @@ func main() {
 				fmt.Printf("\n ▶ ️ Executing [%s]\n", action.Name)
 
 				for _, commandDefinition := range action.Commands {
-					cmd := NewCommand(commandDefinition)
+					cmd := helpers.NewCommand(commandDefinition)
 					cmd.Execute()
 				}
 			}

@@ -2,8 +2,9 @@ package main
 
 import (
 	"fmt"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
+
+	"gopkg.in/yaml.v2"
 )
 
 const (
@@ -11,7 +12,8 @@ const (
 )
 
 type Config struct {
-	ConfigFiles []ConfigFile `yaml:"config_files"`
+	ConfigFiles  []ConfigFile `yaml:"config_files"`
+	EnabledTasks []string     `yaml:"enabled_tasks"`
 
 	// backward compatibility
 	Default DefaultActionsConfig `yaml:"default"`
