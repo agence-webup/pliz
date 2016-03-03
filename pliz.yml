@@ -1,8 +1,8 @@
 version: 1
 containers:
-  build: srcbuild
-  app: php
-  proxy: proxy
+  builder: srcbuild
+  # app: php
+  # proxy: proxy
 
 config_files:
   .env.sample: .env
