@@ -1,14 +1,14 @@
 version: 1
 containers:
-    build: srcbuild
-    app: php
-    proxy: proxy
+  build: srcbuild
+  app: php
+  proxy: proxy
 
 config_files:
   - sample: .env.sample
     target: .env
-  # - sample: docker_ports.sample.yml
-  #   target: docker_ports.yml
+  - sample: docker_ports.sample.yml
+    target: docker_ports.yml
 
 enabled_tasks:
   - npm

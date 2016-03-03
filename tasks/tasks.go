@@ -1,9 +1,8 @@
 package tasks
 
 import (
+	"errors"
 	"fmt"
-	"os"
-	"time"
 	"webup/pliz/helpers"
 )
 
@@ -30,45 +29,13 @@ func (t Task) Execute() bool {
 	return true
 }
 
-// type Task interface {
-// 	GetName() string
-// 	GetDescription() string
-// 	GetExecutionCheck() *TaskExecutionCheck
-//
-// 	Execute() error
-// }
-
-type TaskExecutionCheck interface {
-	CanExecute() bool
-	PostExecute()
-}
-
-type ModificationDateTaskExecutionCheck struct {
-	UpdatedFile string
-	CompareTo   string
-}
-
-// Check if modification time of the file 'UpdatedFile' is later than the file 'CompareTo'
-func (chk ModificationDateTaskExecutionCheck) CanExecute() bool {
-	updatedFileStat, err := os.Stat(chk.UpdatedFile)
-	if err != nil {
-		fmt.Println(err)
-		return false
-	}
-	compareToStat, err := os.Stat(chk.CompareTo)
-	if err != nil {
-		fmt.Println(err)
-		return false
+func CreateTaskWithName(name string) (Task, error) {
+	switch name {
+	case "npm":
+		return NpmTask(), nil
+	case "bower":
+		return BowerTask(), nil
 	}
 
-	if updatedFileStat.ModTime().Before(compareToStat.ModTime()) {
-		return false
-	}
-
-	return true
-}
-
-func (chk ModificationDateTaskExecutionCheck) PostExecute() {
-	currentTime := time.Now().Local()
-	os.Chtimes(chk.CompareTo, currentTime, currentTime)
+	return Task{}, errors.New(fmt.Sprintf("Unable to find the task '%s'\n", name))
 }

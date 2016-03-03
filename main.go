@@ -59,7 +59,7 @@ func main() {
 			 * 1. Duplicate and edit the config files (.env, docker_ports.yml...)
 			 */
 
-			fmt.Printf("\n ▶ ️ Prepare config files...\n")
+			fmt.Printf("\n ▶ ️ Prepare config files...\n\n")
 
 			for _, configFile := range config.ConfigFiles {
 				created := false
@@ -80,24 +80,32 @@ func main() {
 					cmd := helpers.NewCommand([]string{"vim", configFile.Target})
 					cmd.Execute()
 				}
+
+				fmt.Println(configFile.Target + " OK.")
 			}
+
+			fmt.Println("")
 
 			/*
 			 * 2. Run the enabled tasks
 			 */
 
-			fmt.Printf("\n ▶ ️ Run enabled tasks...\n\n")
+			fmt.Printf("\n ▶ ️ Run enabled tasks...\n")
 
 			for _, taskName := range config.EnabledTasks {
-				if taskName == "npm" {
-					task := tasks.NpmTask()
+				fmt.Println("\n*** " + taskName + " ***")
+				task, err := tasks.CreateTaskWithName(taskName)
 
-					if task.Execute() {
-						fmt.Printf("Task '%s' executed.\n", task.Name)
-					} else {
-						// fmt.Printf("Task '%s' skipped.\n", task.Name)
-						// fmt.Println(err)
-					}
+				if err != nil {
+					fmt.Println(err)
+					continue
+				}
+
+				if task.Execute() {
+					fmt.Printf("Task '%s' executed.\n", task.Name)
+				} else {
+					// fmt.Printf("Task '%s' skipped.\n", task.Name)
+					// fmt.Println(err)
 				}
 			}
 
