@@ -3,34 +3,18 @@ package main
 import (
 	"fmt"
 	"os"
+	"webup/pliz/config"
 	"webup/pliz/helpers"
 	"webup/pliz/tasks"
 
 	"github.com/jawher/mow.cli"
 )
 
-type CommandList [][]string
-
-type DefaultActionsConfig struct {
-	Install    Action `yaml:"install"`
-	SrcPrepare Action `yaml:"src-prepare"`
-}
-
-type Action struct {
-	Commands CommandList
-}
-type CustomAction struct {
-	Name   string
-	Action `yaml:",inline"`
-}
-
 func main() {
 	app := cli.App("pliz", "Manage projects building")
 
-	var config Config
-
 	app.Before = func() {
-		err := GetConfig(&config)
+		err := config.Check()
 		if err != nil {
 			cli.Exit(1)
 		}
@@ -45,7 +29,7 @@ func main() {
 
 	app.Command("config", "...", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
-			fmt.Println(config)
+			fmt.Println(config.Get())
 		}
 	})
 
@@ -54,6 +38,8 @@ func main() {
 		forced := cmd.BoolOpt("f force", false, "Force the installation process")
 
 		cmd.Action = func() {
+
+			config := config.Get()
 
 			/*
 			 * 1. Duplicate and edit the config files (.env, docker_ports.yml...)
@@ -144,6 +130,8 @@ func main() {
 
 	app.Command("custom", "Execute the custom actions", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
+
+			config := config.Get()
 
 			for _, action := range config.Custom {
 
