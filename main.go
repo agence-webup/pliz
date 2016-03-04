@@ -93,18 +93,9 @@ func main() {
 
 			for _, task := range config.EnabledTasks {
 				fmt.Println("\n*** " + task.Name + " ***")
-				// task, err := tasks.CreateTaskWithName(taskName)
-
-				// if err != nil {
-				// 	fmt.Println(err)
-				// 	continue
-				// }
 
 				if task.Execute() {
 					fmt.Printf("Task '%s' executed.\n", task.Name)
-				} else {
-					// fmt.Printf("Task '%s' skipped.\n", task.Name)
-					// fmt.Println(err)
 				}
 			}
 
