@@ -4,8 +4,7 @@ import (
 	"fmt"
 	"os"
 	"webup/pliz/config"
-	"webup/pliz/helpers"
-	"webup/pliz/tasks"
+	"webup/pliz/domain"
 
 	"github.com/jawher/mow.cli"
 )
@@ -22,7 +21,7 @@ func main() {
 
 	app.Command("ps", "List running containers", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
-			command := helpers.Command{Name: "docker", Args: []string{"ps"}}
+			command := domain.Command{Name: "docker", Args: []string{"ps"}}
 			command.Execute()
 		}
 	})
@@ -63,7 +62,7 @@ func main() {
 
 				// edit the file
 				if created {
-					cmd := helpers.NewCommand([]string{"vim", configFile.Target})
+					cmd := domain.NewCommand([]string{"vim", configFile.Target})
 					cmd.Execute()
 				}
 
@@ -78,14 +77,14 @@ func main() {
 
 			fmt.Printf("\n ▶ ️ Run enabled tasks...\n")
 
-			for _, taskName := range config.EnabledTasks {
-				fmt.Println("\n*** " + taskName + " ***")
-				task, err := tasks.CreateTaskWithName(taskName)
+			for _, task := range config.EnabledTasks {
+				fmt.Println("\n*** " + task.Name + " ***")
+				// task, err := tasks.CreateTaskWithName(taskName)
 
-				if err != nil {
-					fmt.Println(err)
-					continue
-				}
+				// if err != nil {
+				// 	fmt.Println(err)
+				// 	continue
+				// }
 
 				if task.Execute() {
 					fmt.Printf("Task '%s' executed.\n", task.Name)
@@ -97,7 +96,7 @@ func main() {
 
 			action := config.Default.SrcPrepare
 			for _, commandDefinition := range action.Commands {
-				cmd := helpers.NewCommand(commandDefinition)
+				cmd := domain.NewCommand(commandDefinition)
 				cmd.Execute()
 			}
 
@@ -105,7 +104,7 @@ func main() {
 			fmt.Printf("\n ▶ ️ Install the project...\n")
 
 			for _, commandDefinition := range action.Commands {
-				cmd := helpers.NewCommand(commandDefinition)
+				cmd := domain.NewCommand(commandDefinition)
 				cmd.Execute()
 			}
 		}
@@ -138,7 +137,7 @@ func main() {
 				fmt.Printf("\n ▶ ️ Executing [%s]\n", action.Name)
 
 				for _, commandDefinition := range action.Commands {
-					cmd := helpers.NewCommand(commandDefinition)
+					cmd := domain.NewCommand(commandDefinition)
 					cmd.Execute()
 				}
 			}

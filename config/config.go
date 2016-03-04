@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"webup/pliz/domain"
+	"webup/pliz/tasks"
 
 	"gopkg.in/yaml.v2"
 )
@@ -12,43 +14,7 @@ const (
 	defaultFilename = "pliz.yml"
 )
 
-var loadedConfig *Config
-
-type DefaultActionsConfig struct {
-	Install    Action `yaml:"install"`
-	SrcPrepare Action `yaml:"src-prepare"`
-}
-
-type Action struct {
-	Commands CommandList
-}
-
-type CommandList [][]string
-
-type Config struct {
-	Containers   ContainerConfig
-	ConfigFiles  []ConfigFile
-	EnabledTasks []string
-
-	// backward compatibility
-	Default DefaultActionsConfig `yaml:"default"`
-	Custom  []CustomAction       `yaml:"custom"`
-}
-type CustomAction struct {
-	Name   string
-	Action `yaml:",inline"`
-}
-
-type ConfigFile struct {
-	Sample string
-	Target string
-}
-
-type ContainerConfig struct {
-	Proxy   string
-	App     string
-	Builder string
-}
+var loadedConfig *domain.Config
 
 func Check() error {
 
@@ -68,19 +34,19 @@ func Check() error {
 	return nil
 }
 
-func Get() Config {
+func Get() domain.Config {
 	return *loadedConfig
 }
 
 type parserConfig struct {
 	Containers   map[string]string `yaml:"containers"`
 	ConfigFiles  map[string]string `yaml:"config_files"`
-	EnabledTasks []string          `yaml:"enabled_tasks"`
+	EnabledTasks []TaskSpec        `yaml:"enabled_tasks"`
 }
 
-func (parsed parserConfig) convertToConfig(config *Config) error {
+func (parsed parserConfig) convertToConfig(config *domain.Config) error {
 	// container config
-	containerConfig := ContainerConfig{
+	containerConfig := domain.ContainerConfig{
 		Proxy:   "proxy",
 		App:     "app",
 		Builder: "srcbuild",
@@ -97,21 +63,53 @@ func (parsed parserConfig) convertToConfig(config *Config) error {
 	config.Containers = containerConfig
 
 	// config files
-	configFiles := []ConfigFile{}
+	configFiles := []domain.ConfigFile{}
 	for sample, target := range parsed.ConfigFiles {
-		configFiles = append(configFiles, ConfigFile{Sample: sample, Target: target})
+		configFiles = append(configFiles, domain.ConfigFile{Sample: sample, Target: target})
 	}
 	config.ConfigFiles = configFiles
 
 	// enabled tasks
-	config.EnabledTasks = parsed.EnabledTasks
+	enabledTasks := []domain.Task{}
+	for _, taskSpec := range parsed.EnabledTasks {
+
+		task, err := tasks.CreateTaskWithName(taskSpec.Name, *config)
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+
+		// check for override
+		if taskSpec.Override != nil {
+
+			// check if a container is specified
+			// if the value is 'none', the command will be run on the host
+			if taskSpec.Override.Container != nil {
+				if *taskSpec.Override.Container != "none" {
+					task.Container = taskSpec.Override.Container
+				} else {
+					task.Container = nil
+				}
+			}
+
+			// check if the command is overrided
+			if taskSpec.Override.CommandArgs != nil && len(*taskSpec.Override.CommandArgs) > 0 {
+				task.CommandArgs = *taskSpec.Override.CommandArgs
+			} else {
+				fmt.Println("Not enough args to execute the command")
+			}
+		}
+
+		enabledTasks = append(enabledTasks, task)
+	}
+	config.EnabledTasks = enabledTasks
 
 	return nil
 }
 
-func parseConfigFile() (Config, error) {
+func parseConfigFile() (domain.Config, error) {
 
-	config := Config{}
+	config := domain.Config{}
 
 	configFile, err := ioutil.ReadFile(defaultFilename)
 	if err != nil {

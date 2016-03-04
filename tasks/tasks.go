@@ -3,39 +3,16 @@ package tasks
 import (
 	"errors"
 	"fmt"
-	"webup/pliz/helpers"
+	"webup/pliz/domain"
 )
 
-type Task struct {
-	Name           string
-	Description    string
-	ExecutionCheck TaskExecutionCheck
-	Command        helpers.Command
-}
-
-func (t Task) Execute() bool {
-	if t.ExecutionCheck != nil && !t.ExecutionCheck.CanExecute() {
-		// return errors.New(fmt.Sprintf("Task '%s' skipped.", t.Name))
-		fmt.Printf("Task '%s' skipped.\n", t.Name)
-		return false
-	}
-
-	t.Command.Execute()
-
-	if t.ExecutionCheck != nil {
-		t.ExecutionCheck.PostExecute()
-	}
-
-	return true
-}
-
-func CreateTaskWithName(name string) (Task, error) {
+func CreateTaskWithName(name string, config domain.Config) (domain.Task, error) {
 	switch name {
 	case "npm":
-		return NpmTask(), nil
+		return NpmTask(config.Containers.Builder), nil
 	case "bower":
-		return BowerTask(), nil
+		return BowerTask(config.Containers.Builder), nil
 	}
 
-	return Task{}, errors.New(fmt.Sprintf("Unable to find the task '%s'\n", name))
+	return domain.Task{}, errors.New(fmt.Sprintf("Unable to find the task '%s'\n", name))
 }
