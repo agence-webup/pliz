@@ -34,6 +34,7 @@ type ContainerConfig struct {
 	Proxy   string
 	App     string
 	Builder string
+	Db      string
 }
 
 func (c ContainerConfig) All() []string {

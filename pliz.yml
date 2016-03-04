@@ -5,6 +5,7 @@ containers:
   # builder: srcbuild
   # app: php
   # proxy: proxy
+  # db: db
 
 config_files:
   .env.sample: .env
