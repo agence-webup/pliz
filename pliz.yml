@@ -18,6 +18,7 @@ enabled_tasks:
       command: ["echo", "as you arrrrre!"]
   - name: bower
     version: 2 # not used currently
+  - name: composer
 
 
 default:
