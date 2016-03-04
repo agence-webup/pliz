@@ -160,6 +160,24 @@ func main() {
 		}
 	})
 
+	app.Command("logs", "Display logs of all containers (or the specified container)", func(cmd *cli.Cmd) {
+
+		cmd.Spec = "[CONTAINER]"
+		container := cmd.StringArg("CONTAINER", "", "The container to log")
+
+		cmd.Action = func() {
+
+			args := []string{"docker-compose", "logs"}
+
+			if *container != "" {
+				args = append(args, *container)
+			}
+
+			cmd := domain.NewCommand(args)
+			cmd.Execute()
+		}
+	})
+
 	app.Command("tasks", "List the available tasks", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
 			tasks := []string{
