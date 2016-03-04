@@ -75,6 +75,17 @@ func main() {
 			 * 2. Run the enabled tasks
 			 */
 
+			fmt.Printf("\n ▶ ️ Build the containers...\n")
+
+			cmd := domain.NewCommand([]string{"docker-compose", "build"})
+			cmd.Execute()
+
+			fmt.Println("")
+
+			/*
+			 * 3. Run the enabled tasks
+			 */
+
 			fmt.Printf("\n ▶ ️ Run enabled tasks...\n")
 
 			for _, task := range config.EnabledTasks {
