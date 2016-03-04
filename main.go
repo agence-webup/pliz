@@ -10,14 +10,14 @@ import (
 )
 
 func main() {
-	app := cli.App("pliz", "Manage projects building")
 
-	app.Before = func() {
-		err := config.Check()
-		if err != nil {
-			cli.Exit(1)
-		}
+	// Parse and check config
+	err := config.Check()
+	if err != nil {
+		cli.Exit(1)
 	}
+
+	app := cli.App("pliz", "Manage projects building")
 
 	app.Command("ps", "List running containers", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
