@@ -21,16 +21,17 @@ func main() {
 
 	app := cli.App("pliz", "Manage projects building")
 
-	app.Command("ps", "List running containers", func(cmd *cli.Cmd) {
+	app.Command("start", "Start the project", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
-			command := domain.Command{Name: "docker", Args: []string{"ps"}}
-			command.Execute()
+			cmd := domain.NewCommand([]string{"docker-compose", "up", "-d", config.Get().Containers.Proxy})
+			cmd.Execute()
 		}
 	})
 
-	app.Command("config", "...", func(cmd *cli.Cmd) {
+	app.Command("stop", "Stop the project", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
-			fmt.Println(config.Get())
+			cmd := domain.NewCommand([]string{"docker-compose", "stop"})
+			cmd.Execute()
 		}
 	})
 
