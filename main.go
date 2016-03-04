@@ -14,6 +14,7 @@ func main() {
 	// Parse and check config
 	err := config.Check()
 	if err != nil {
+		os.Exit(1)
 		return
 	}
 
