@@ -38,5 +38,5 @@ type ContainerConfig struct {
 }
 
 func (c ContainerConfig) All() []string {
-	return []string{c.Proxy, c.App, c.Builder}
+	return []string{c.Proxy, c.App, c.Builder, c.Db}
 }
