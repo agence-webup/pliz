@@ -21,6 +21,7 @@ enabled_tasks:
     version: 2 # not used currently
   - name: composer
   - name: gulp
+  - name: db-update
 
 
 default:
