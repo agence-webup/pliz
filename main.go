@@ -35,6 +35,13 @@ func main() {
 		}
 	})
 
+	app.Command("restart", "Restart the project", func(cmd *cli.Cmd) {
+		cmd.Action = func() {
+			cmd := domain.NewCommand([]string{"docker-compose", "restart"})
+			cmd.Execute()
+		}
+	})
+
 	app.Command("install", "Install (or update) the project dependencies (docker containers, npm, composer...)", func(cmd *cli.Cmd) {
 
 		forced := cmd.BoolOpt("f force", false, "Force the installation process")
