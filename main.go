@@ -72,7 +72,7 @@ func main() {
 			fmt.Println("")
 
 			/*
-			 * 2. Run the enabled tasks
+			 * 2. Build the containers
 			 */
 
 			fmt.Printf("\n ▶ ️ Build the containers...\n")
@@ -135,6 +135,44 @@ func main() {
 			for _, task := range tasks {
 				fmt.Printf("   %s\n", task)
 			}
+		}
+	})
+
+	app.Command("bash", "Display a shell inside the build container (or the specified container)", func(cmd *cli.Cmd) {
+
+		defaultContainer := config.Get().Containers.Builder
+
+		cmd.Spec = "[CONTAINER]"
+		container := cmd.StringArg("CONTAINER", defaultContainer, "The container that will be used to display the shell")
+
+		cmd.Action = func() {
+
+			// NOTE: this code allows to run a shell inside a running container. Not used currently.
+
+			// cmd1 := exec.Command("docker-compose", "ps", "-q", *container)
+			// output, err := cmd1.Output()
+			// if err != nil {
+			// 	fmt.Println(err)
+			// 	cli.Exit(1)
+			// 	return
+			// }
+			// containerId := strings.TrimSpace(string(output))
+			// if containerId == "" {
+			// 	fmt.Printf("The container '%s' is not running.", *container)
+			// 	cli.Exit(1)
+			// 	return
+			// }
+			//
+			// cmd := domain.NewCommand([]string{
+			// 	"docker",
+			// 	"exec",
+			// 	"-it",
+			// 	containerId,
+			// 	"bash",
+			// })
+
+			cmd := domain.NewContainerCommand(*container, []string{"bash"})
+			cmd.Execute()
 		}
 	})
 
