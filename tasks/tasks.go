@@ -14,6 +14,8 @@ func CreateTaskWithName(name string, config domain.Config) (domain.Task, error) 
 		return BowerTask(config.Containers.Builder), nil
 	case "composer":
 		return ComposerTask(config.Containers.App), nil
+	case "gulp":
+		return GulpTask(config.Containers.Builder), nil
 	}
 
 	return domain.Task{}, errors.New(fmt.Sprintf("Unable to find the task '%s'\n", name))

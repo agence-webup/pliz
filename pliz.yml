@@ -19,6 +19,7 @@ enabled_tasks:
   - name: bower
     version: 2 # not used currently
   - name: composer
+  - name: gulp
 
 
 default:
