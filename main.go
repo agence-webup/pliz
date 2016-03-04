@@ -124,23 +124,6 @@ func main() {
 		}
 	})
 
-	app.Command("tasks", "Describe the available tasks", func(cmd *cli.Cmd) {
-		cmd.Action = func() {
-			tasks := []string{
-				"npm",
-				"bower",
-				"composer",
-				"gulp",
-				"db-update",
-			}
-
-			fmt.Println("Available tasks:")
-			for _, task := range tasks {
-				fmt.Printf("   %s\n", task)
-			}
-		}
-	})
-
 	app.Command("bash", "Display a shell inside the build container (or the specified container)", func(cmd *cli.Cmd) {
 
 		defaultContainer := config.Get().Containers.Builder
@@ -179,6 +162,23 @@ func main() {
 		}
 	})
 
+	app.Command("tasks", "List the available tasks", func(cmd *cli.Cmd) {
+		cmd.Action = func() {
+			tasks := []string{
+				"npm",
+				"bower",
+				"composer",
+				"gulp",
+				"db-update",
+			}
+
+			fmt.Println("Available tasks:")
+			for _, task := range tasks {
+				fmt.Printf("   %s\n", task)
+			}
+		}
+	})
+
 	app.Command("run", "Execute a task", func(cmd *cli.Cmd) {
 
 		cmd.Spec = "TASK"
@@ -200,6 +200,12 @@ func main() {
 			if task.Execute() {
 				fmt.Printf("Task '%s' executed.\n", task.Name)
 			}
+		}
+	})
+
+	app.Command("config", "DEBUG", func(cmd *cli.Cmd) {
+		cmd.Action = func() {
+			fmt.Println(config.Get())
 		}
 	})
 
