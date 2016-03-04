@@ -14,7 +14,7 @@ func main() {
 	// Parse and check config
 	err := config.Check()
 	if err != nil {
-		cli.Exit(1)
+		return
 	}
 
 	app := cli.App("pliz", "Manage projects building")
