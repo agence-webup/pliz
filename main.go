@@ -5,6 +5,7 @@ import (
 	"os"
 	"webup/pliz/config"
 	"webup/pliz/domain"
+	"webup/pliz/tasks"
 
 	"github.com/jawher/mow.cli"
 )
@@ -174,6 +175,30 @@ func main() {
 
 			cmd := domain.NewContainerCommand(*container, []string{"bash"})
 			cmd.Execute()
+		}
+	})
+
+	app.Command("run", "Execute a task", func(cmd *cli.Cmd) {
+
+		cmd.Spec = "TASK"
+		taskName := cmd.StringArg("TASK", "", "Execute the specified task. Run 'pliz tasks' to get the list of the tasks")
+
+		cmd.Action = func() {
+
+			// get the task
+			task, err := tasks.CreateTaskWithName(*taskName, config.Get())
+			if err != nil {
+				fmt.Println(err)
+				cli.Exit(1)
+				return
+			}
+
+			// disable the execution check for standalone execution
+			task.ExecutionCheck = nil
+
+			if task.Execute() {
+				fmt.Printf("Task '%s' executed.\n", task.Name)
+			}
 		}
 	})
 
