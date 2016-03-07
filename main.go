@@ -101,24 +101,18 @@ func main() {
 			for _, task := range config.EnabledTasks {
 				fmt.Println("\n*** " + task.Name + " ***")
 
+				// disable the execution check if the installation is forced
+				if *forced {
+					task.ExecutionCheck = nil
+				}
+
 				if task.Execute() {
 					fmt.Printf("Task '%s' executed.\n", task.Name)
 				}
 			}
 
-			action := config.Default.SrcPrepare
-			for _, commandDefinition := range action.Commands {
-				cmd := domain.NewCommand(commandDefinition)
-				cmd.Execute()
-			}
+			fmt.Println("You may now run 'pliz start' to launch your project")
 
-			action = config.Default.Install
-			fmt.Printf("\n ▶ ️ Install the project...\n")
-
-			for _, commandDefinition := range action.Commands {
-				cmd := domain.NewCommand(commandDefinition)
-				cmd.Execute()
-			}
 		}
 	})
 
