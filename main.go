@@ -21,6 +21,8 @@ func main() {
 
 	app := cli.App("pliz", "Manage projects building")
 
+	app.Version("v version", "Pliz 0.2")
+
 	app.Command("start", "Start the project", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
 			cmd := domain.NewCommand([]string{"docker-compose", "up", "-d", config.Get().Containers.Proxy})
@@ -236,8 +238,6 @@ func main() {
 
 		}
 	})
-
-	app.Version("v version", "Pliz 0.1")
 
 	app.Run(os.Args)
 }
