@@ -43,6 +43,7 @@ type parserConfig struct {
 	ConfigFiles  map[string]string `yaml:"config_files"`
 	EnabledTasks []TaskSpec        `yaml:"enabled_tasks"`
 	Checklist    []string          `yaml:"checklist"`
+	CustomTasks  []CustomTaskSpec  `yaml:"custom_tasks"`
 }
 
 func (parsed parserConfig) convertToConfig(config *domain.Config) error {
@@ -69,6 +70,25 @@ func (parsed parserConfig) convertToConfig(config *domain.Config) error {
 		configFiles = append(configFiles, domain.ConfigFile{Sample: sample, Target: target})
 	}
 	config.ConfigFiles = configFiles
+
+	// custom tasks
+	// NOTE: must be handled before the enabled tasks because the custom tasks can be specified inside the enabled tasks
+	customTasks := []domain.Task{}
+	for _, taskSpec := range parsed.CustomTasks {
+
+		// check if the custom task is valid
+		if taskSpec.IsValid() {
+			task := domain.Task{Name: taskSpec.Name, Description: taskSpec.Description}
+			// check if the container is specified
+			if taskSpec.Container != "none" {
+				task.Container = &taskSpec.Container
+			}
+			// command args
+			task.CommandArgs = taskSpec.CommandArgs
+			customTasks = append(customTasks, task)
+		}
+	}
+	config.CustomTasks = customTasks
 
 	// enabled tasks
 	enabledTasks := []domain.Task{}

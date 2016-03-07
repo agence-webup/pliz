@@ -20,12 +20,26 @@ enabled_tasks:
   - name: bower
     version: 2 # not used currently
   - name: composer
-  - name: gulp
-  - name: db-update
+  # - name: gulp
+  # - name: db-update
+  - name: key_generate
 
 checklist:
   - Check if your .env is correctly configured
   - Don't forget to run 'pliz bash app; php artisan key:generate' if needed
+
+custom_tasks:
+  - name: key_generate
+    description: Generate the key used the encrypt cookies
+    container: none
+    command:
+      - sh
+      - "-c"
+      - nom="Bruno";
+        if [ $nom = "Bruno" ];
+        then
+          echo "Salut Bruno !";
+        fi;
 
 default:
   src-prepare:

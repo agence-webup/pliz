@@ -6,6 +6,20 @@ type TaskSpec struct {
 }
 
 type TaskOverrideSpec struct {
-	Container   *string
+	Container   *string   `yaml:"container"`
 	CommandArgs *[]string `yaml:"command"`
+}
+
+type CustomTaskSpec struct {
+	Name        string   `yaml:"name"`
+	Description string   `yaml:"description"`
+	Container   string   `yaml:"container"`
+	CommandArgs []string `yaml:"command"`
+}
+
+func (task CustomTaskSpec) IsValid() bool {
+	if task.Name == "" || task.Container == "" || len(task.CommandArgs) == 0 {
+		return false
+	}
+	return true
 }
