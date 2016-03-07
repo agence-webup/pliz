@@ -188,13 +188,7 @@ func main() {
 
 	app.Command("tasks", "List the available tasks", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
-			tasks := []string{
-				"npm",
-				"bower",
-				"composer",
-				"gulp",
-				"db-update",
-			}
+			tasks := tasks.AllTaskNames()
 
 			fmt.Println("Available tasks:")
 			for _, task := range tasks {

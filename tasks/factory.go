@@ -6,6 +6,16 @@ import (
 	"webup/pliz/domain"
 )
 
+func AllTaskNames() []string {
+	return []string{
+		"npm",
+		"bower",
+		"composer",
+		"gulp",
+		"db-update",
+	}
+}
+
 func CreateTaskWithName(name string, config domain.Config) (domain.Task, error) {
 
 	// default tasks
