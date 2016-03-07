@@ -23,6 +23,9 @@ enabled_tasks:
   - name: gulp
   - name: db-update
 
+checklist:
+  - Check if your .env is correctly configured
+  - Don't forget to run 'pliz bash app; php artisan key:generate' if needed
 
 default:
   src-prepare:

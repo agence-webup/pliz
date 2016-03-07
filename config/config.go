@@ -42,6 +42,7 @@ type parserConfig struct {
 	Containers   map[string]string `yaml:"containers"`
 	ConfigFiles  map[string]string `yaml:"config_files"`
 	EnabledTasks []TaskSpec        `yaml:"enabled_tasks"`
+	Checklist    []string          `yaml:"checklist"`
 }
 
 func (parsed parserConfig) convertToConfig(config *domain.Config) error {
@@ -103,6 +104,9 @@ func (parsed parserConfig) convertToConfig(config *domain.Config) error {
 		enabledTasks = append(enabledTasks, task)
 	}
 	config.EnabledTasks = enabledTasks
+
+	// checklist
+	config.Checklist = parsed.Checklist
 
 	return nil
 }

@@ -15,6 +15,7 @@ type Config struct {
 	Containers   ContainerConfig
 	ConfigFiles  []ConfigFile
 	EnabledTasks []Task
+	Checklist    []string
 
 	// backward compatibility
 	Default DefaultActionsConfig `yaml:"default"`

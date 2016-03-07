@@ -113,7 +113,19 @@ func main() {
 				}
 			}
 
-			fmt.Println("You may now run 'pliz start' to launch your project")
+			fmt.Println("\n\n ✓ You may now run 'pliz start' to launch your project")
+
+			/*
+			 * 4. Display the checklist if needed
+			 */
+
+			if len(config.Checklist) > 0 {
+				for _, item := range config.Checklist {
+					fmt.Printf("  → %s\n", item)
+				}
+			}
+
+			fmt.Println("")
 
 		}
 	})
