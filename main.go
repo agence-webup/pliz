@@ -227,29 +227,5 @@ func main() {
 		}
 	})
 
-	app.Command("config", "DEBUG", func(cmd *cli.Cmd) {
-		cmd.Action = func() {
-			fmt.Println(config.Get())
-		}
-	})
-
-	app.Command("custom", "Execute the custom actions", func(cmd *cli.Cmd) {
-		cmd.Action = func() {
-
-			config := config.Get()
-
-			for _, action := range config.Custom {
-
-				fmt.Printf("\n ▶ ️ Executing [%s]\n", action.Name)
-
-				for _, commandDefinition := range action.Commands {
-					cmd := domain.NewCommand(commandDefinition)
-					cmd.Execute()
-				}
-			}
-
-		}
-	})
-
 	app.Run(os.Args)
 }

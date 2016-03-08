@@ -1,30 +1,11 @@
 package domain
 
-type DefaultActionsConfig struct {
-	Install    Action `yaml:"install"`
-	SrcPrepare Action `yaml:"src-prepare"`
-}
-
-type Action struct {
-	Commands CommandList
-}
-
-type CommandList [][]string
-
 type Config struct {
 	Containers   ContainerConfig
 	ConfigFiles  []ConfigFile
 	EnabledTasks []Task
 	Checklist    []string
 	CustomTasks  []Task
-
-	// backward compatibility
-	Default DefaultActionsConfig `yaml:"default"`
-	Custom  []CustomAction       `yaml:"custom"`
-}
-type CustomAction struct {
-	Name   string
-	Action `yaml:",inline"`
 }
 
 type ConfigFile struct {
