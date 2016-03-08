@@ -1,0 +1,49 @@
+version: 1
+
+# optional. Allows to override the container names
+containers:
+  # builder: srcbuild
+  # app: php
+  # proxy: proxy
+  # db: db
+
+config_files:
+  .env.sample: .env
+  docker_ports.sample.yml: docker_ports.yml
+  # ...
+
+enabled_tasks:
+  - name: npm
+    override:
+      container: srcbuild # can be 'none' to run the command on the host
+      command: ["echo", "as you arrrrre!"]
+  - name: bower
+    version: 2 # not used currently
+  - name: composer
+  # - name: gulp
+  # - name: db-update
+  - name: key_generate
+
+watch:
+  container: none
+  command:
+    - tail
+    - -f
+    - pliz.example.yml
+
+checklist:
+  - Check if your .env is correctly configured
+  - Don't forget to run 'pliz bash app; php artisan key:generate' if needed
+
+custom_tasks:
+  - name: key_generate
+    description: Generate the key used the encrypt cookies
+    container: none
+    command:
+      - sh
+      - "-c"
+      - nom="Bruno";
+        if [ $nom = "Bruno" ];
+        then
+          echo "Salut Bruno !";
+        fi;
