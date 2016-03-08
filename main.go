@@ -204,12 +204,29 @@ func main() {
 
 		cmd.Action = func() {
 
-			// get the task
-			task, err := tasks.CreateTaskWithName(*taskName, config.Get())
-			if err != nil {
-				fmt.Println(err)
-				cli.Exit(1)
-				return
+			var task domain.Task
+
+			// first, search for the enabled task (which could be overrided)
+			taskFound := false
+			for _, t := range config.Get().EnabledTasks {
+				if *taskName == t.Name {
+					task = t
+					taskFound = true
+					break
+				}
+			}
+
+			// if no task is found, try to create a default task
+			if !taskFound {
+				// get the task
+				defaultTask, err := tasks.CreateTaskWithName(*taskName, config.Get())
+				if err != nil {
+					fmt.Println(err)
+					cli.Exit(1)
+					return
+				} else {
+					task = defaultTask
+				}
 			}
 
 			// disable the execution check for standalone execution
