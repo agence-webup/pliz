@@ -12,16 +12,18 @@ import (
 
 func main() {
 
-	// Parse and check config
-	err := config.Check()
-	if err != nil {
-		os.Exit(1)
-		return
-	}
-
 	app := cli.App("pliz", "Manage projects building")
 
 	app.Version("v version", "Pliz 0.2")
+
+	app.Before = func() {
+		// Parse and check config
+		err := config.Check()
+		if err != nil {
+			os.Exit(1)
+			return
+		}
+	}
 
 	app.Command("start", "Start the project", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
