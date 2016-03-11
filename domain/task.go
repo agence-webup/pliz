@@ -1,6 +1,9 @@
 package domain
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 type Task struct {
 	Name           string
@@ -30,4 +33,8 @@ func (t Task) Execute() bool {
 	}
 
 	return true
+}
+
+func (t Task) String() string {
+	return fmt.Sprintf("%s => container:%v | %s", t.Name, *t.Container, strings.Join(t.CommandArgs, " "))
 }
