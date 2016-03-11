@@ -74,14 +74,14 @@ func (parsed parserConfig) convertToConfig(config *domain.Config) error {
 	// custom tasks
 	// NOTE: must be handled before the enabled tasks because the custom tasks can be specified inside the enabled tasks
 	customTasks := []domain.Task{}
-	for _, taskSpec := range parsed.CustomTasks {
+	for i, taskSpec := range parsed.CustomTasks {
 
 		// check if the custom task is valid
 		if taskSpec.IsValid() {
 			task := domain.Task{Name: taskSpec.Name, Description: taskSpec.Description}
 			// check if the container is specified
 			if taskSpec.Container != "none" {
-				task.Container = &taskSpec.Container
+				task.Container = &(parsed.CustomTasks[i].Container)
 			}
 			// command args
 			task.CommandArgs = taskSpec.CommandArgs
