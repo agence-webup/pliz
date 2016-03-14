@@ -7,6 +7,7 @@ import (
 	"webup/pliz/domain"
 	"webup/pliz/tasks"
 
+	"github.com/Songmu/prompter"
 	"github.com/jawher/mow.cli"
 )
 
@@ -238,6 +239,27 @@ func main() {
 				fmt.Printf("Task '%s' executed.\n", task.Name)
 			}
 		}
+	})
+
+	app.Command("deploy", "Execute deployment tasks", func(cmd *cli.Cmd) {
+
+		cmd.Command("run", "Run a deployment", func(cmd *cli.Cmd) {
+
+			cmd.Action = func() {
+				backup := prompter.YN("Do you want to make a backup?", true)
+				fmt.Println("Backup:", backup)
+
+				ok := prompter.YN("Are you ready to deploy?", false)
+				if !ok {
+					return
+				}
+
+				cmd := domain.NewCommand([]string{"docker-compose", "-f", "docker-compose.yml", "-f", "docker-compose.prod.yml", "up", "-d", "proxy"})
+				cmd.Execute()
+			}
+
+		})
+
 	})
 
 	app.Run(os.Args)

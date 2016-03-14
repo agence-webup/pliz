@@ -1,8 +1,20 @@
-hash: 91f83d70b55fc9bb31cd03b9179694d2834e989088cc19adf6d11acf7b69f919
-updated: 2016-03-02T00:00:50.08273257+01:00
+hash: 229176b65fc007233b541f095b0460bcfb5264d1e40a2fa356e0d0140e867ee2
+updated: 2016-03-14T20:43:28.806747357+01:00
 imports:
 - name: github.com/jawher/mow.cli
   version: 772320464101e904cd51198160eb4d489be9cc49
+- name: github.com/mattn/go-isatty
+  version: 56b76bdf51f7708750eac80fa38b952bb9f32639
+- name: github.com/Songmu/prompter
+  version: f49666b0047d12850875d771340e1d862d9e7a0c
+- name: golang.org/x/crypto
+  version: de93d05161db39bcbd84d3da2e54c4a18f37f0b1
+  subpackages:
+  - ssh/terminal
+- name: golang.org/x/sys
+  version: 7a56174f0086b32866ebd746a794417edbc678a1
+  subpackages:
+  - unix
 - name: gopkg.in/yaml.v2
   version: a83829b6f1293c91addabc89d0571c246397bbf4
 devImports: []
