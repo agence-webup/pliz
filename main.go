@@ -129,15 +129,15 @@ func main() {
 		}
 	})
 
-	app.Command("bash", "Display a shell inside the build container (or the specified container)", func(cmd *cli.Cmd) {
+	app.Command("bash", "Display a shell inside the builder service (or the specified service)", func(cmd *cli.Cmd) {
 
 		// parse and check config
 		ParseAndCheckConfig()
 
 		defaultContainer := config.Get().Containers.Builder
 
-		cmd.Spec = "[CONTAINER]"
-		container := cmd.StringArg("CONTAINER", defaultContainer, "The container that will be used to display the shell")
+		cmd.Spec = "[SERVICE]"
+		container := cmd.StringArg("SERVICE", defaultContainer, "The Compose service that will be used to display the shell")
 
 		cmd.Action = func() {
 
@@ -170,10 +170,10 @@ func main() {
 		}
 	})
 
-	app.Command("logs", "Display logs of all containers (or the specified container)", func(cmd *cli.Cmd) {
+	app.Command("logs", "Display logs of all services (or the specified service)", func(cmd *cli.Cmd) {
 
-		cmd.Spec = "[CONTAINER]"
-		container := cmd.StringArg("CONTAINER", "", "The container to log")
+		cmd.Spec = "[SERVICE]"
+		container := cmd.StringArg("SERVICE", "", "The Compose service to log")
 
 		cmd.Action = func() {
 
