@@ -15,7 +15,7 @@ func main() {
 
 	app := cli.App("pliz", "Manage projects building")
 
-	app.Version("v version", "Pliz 1.0.1")
+	app.Version("v version", "Pliz 1.1-dev")
 
 	app.Before = func() {
 		// Parse and check config

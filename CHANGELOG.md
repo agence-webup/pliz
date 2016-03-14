@@ -1,3 +1,9 @@
+# 1.1-dev
+WIP
+
+- Add the command `pliz deploy run` to start a deployment with a `docker-compose.prod.yml` file
+
+
 # 1.0.1
 3/11/2016
 
