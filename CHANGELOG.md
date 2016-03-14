@@ -1,6 +1,7 @@
 # 1.1-dev
 WIP
 
+- Fix issue with `pliz bash`: the config was not parsed before attempting to use it
 - Add the command `pliz deploy run` to start a deployment with a `docker-compose.prod.yml` file
 
 

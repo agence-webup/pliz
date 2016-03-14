@@ -19,11 +19,7 @@ func main() {
 
 	app.Before = func() {
 		// Parse and check config
-		err := config.Check()
-		if err != nil {
-			os.Exit(1)
-			return
-		}
+		ParseAndCheckConfig()
 	}
 
 	app.Command("start", "Start the project", func(cmd *cli.Cmd) {
@@ -134,6 +130,9 @@ func main() {
 	})
 
 	app.Command("bash", "Display a shell inside the build container (or the specified container)", func(cmd *cli.Cmd) {
+
+		// parse and check config
+		ParseAndCheckConfig()
 
 		defaultContainer := config.Get().Containers.Builder
 
@@ -263,4 +262,12 @@ func main() {
 	})
 
 	app.Run(os.Args)
+}
+
+func ParseAndCheckConfig() {
+	err := config.Check()
+	if err != nil {
+		os.Exit(1)
+		return
+	}
 }
