@@ -6,6 +6,7 @@ import (
 	"webup/pliz/config"
 	"webup/pliz/domain"
 	"webup/pliz/tasks"
+	"webup/pliz/utils"
 
 	"github.com/Songmu/prompter"
 	"github.com/jawher/mow.cli"
@@ -15,7 +16,7 @@ func main() {
 
 	app := cli.App("pliz", "Manage projects building")
 
-	app.Version("v version", "Pliz 1.1-dev")
+	app.Version("v version", "Pliz rev. 2-dev")
 
 	app.Before = func() {
 		// Parse and check config
@@ -67,7 +68,7 @@ func main() {
 
 				// check if the file exists. If not, duplicate the sample
 				if _, err := os.Stat(configFile.Target); os.IsNotExist(err) {
-					os.Link(configFile.Sample, configFile.Target)
+					utils.CopyFileContents(configFile.Sample, configFile.Target)
 					created = true
 				}
 

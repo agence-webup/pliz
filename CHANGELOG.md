@@ -1,6 +1,7 @@
-# 1.1-dev
+# rev 2-dev
 WIP
 
+- Don't use a hard link for config files anymore. Classic file's content copy instead.
 - Fix issue with `pliz bash`: the config was not parsed before attempting to use it
 - Add the command `pliz deploy run` to start a deployment with a `docker-compose.prod.yml` file
 
