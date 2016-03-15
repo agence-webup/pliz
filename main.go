@@ -18,9 +18,22 @@ func main() {
 
 	app.Version("v version", "Pliz rev. 2-dev")
 
+	// option to change the Pliz env
+	plizEnv := app.String(cli.StringOpt{
+		Name:  "env",
+		Value: "",
+		Desc:  "Change the environnment of Pliz (i.e. 'prod'). The environment var 'PLIZ_ENV' can be use too.",
+	})
+	prod := false
+
 	app.Before = func() {
 		// Parse and check config
 		ParseAndCheckConfig()
+
+		// check for env
+		if *plizEnv == "prod" || os.Getenv("PLIZ_ENV") == "prod" {
+			prod = true
+		}
 	}
 
 	app.Command("start", "Start the project", func(cmd *cli.Cmd) {
@@ -89,7 +102,13 @@ func main() {
 
 			fmt.Printf("\n ▶ ️ Build the containers...\n")
 
-			cmd := domain.NewCommand([]string{"docker-compose", "build"})
+			var args []string
+			if prod {
+				args = []string{"docker-compose", "-f", "docker-compose.yml", "-f", "docker-compose.prod.yml", "build"}
+			} else {
+				args = []string{"docker-compose", "build"}
+			}
+			cmd := domain.NewCommand(args)
 			cmd.Execute()
 
 			fmt.Println("")
@@ -108,7 +127,7 @@ func main() {
 					task.ExecutionCheck = nil
 				}
 
-				if task.Execute() {
+				if task.Execute(domain.TaskExecutionContext{Prod: prod}) {
 					fmt.Printf("Task '%s' executed.\n", task.Name)
 				}
 			}
@@ -166,7 +185,7 @@ func main() {
 			// 	"bash",
 			// })
 
-			cmd := domain.NewContainerCommand(*container, []string{"bash"})
+			cmd := domain.NewContainerCommand(*container, []string{"bash"}, prod)
 			cmd.Execute()
 		}
 	})
@@ -178,7 +197,12 @@ func main() {
 
 		cmd.Action = func() {
 
-			args := []string{"docker-compose", "logs"}
+			var args []string
+			if prod {
+				args = []string{"docker-compose", "-f", "docker-compose.yml", "-f", "docker-compose.prod.yml", "logs"}
+			} else {
+				args = []string{"docker-compose", "logs"}
+			}
 
 			if *container != "" {
 				args = append(args, *container)
@@ -235,7 +259,7 @@ func main() {
 			// disable the execution check for standalone execution
 			task.ExecutionCheck = nil
 
-			if task.Execute() {
+			if task.Execute(domain.TaskExecutionContext{Prod: prod}) {
 				fmt.Printf("Task '%s' executed.\n", task.Name)
 			}
 		}

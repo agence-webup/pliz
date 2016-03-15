@@ -13,7 +13,7 @@ type Task struct {
 	CommandArgs    CommandArgs
 }
 
-func (t Task) Execute() bool {
+func (t Task) Execute(context TaskExecutionContext) bool {
 	if t.ExecutionCheck != nil && !t.ExecutionCheck.CanExecute() {
 		// return errors.New(fmt.Sprintf("Task '%s' skipped.", t.Name))
 		fmt.Printf("Task '%s' skipped.\n", t.Name)
@@ -22,7 +22,7 @@ func (t Task) Execute() bool {
 
 	var command Command
 	if t.Container != nil {
-		command = NewContainerCommand(*t.Container, t.CommandArgs)
+		command = NewContainerCommand(*t.Container, t.CommandArgs, context.Prod)
 	} else {
 		command = NewCommand(t.CommandArgs)
 	}
@@ -37,4 +37,8 @@ func (t Task) Execute() bool {
 
 func (t Task) String() string {
 	return fmt.Sprintf("%s => container:%v | %s", t.Name, *t.Container, strings.Join(t.CommandArgs, " "))
+}
+
+type TaskExecutionContext struct {
+	Prod bool
 }
