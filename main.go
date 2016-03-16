@@ -16,7 +16,7 @@ func main() {
 
 	app := cli.App("pliz", "Manage projects building")
 
-	app.Version("v version", "Pliz rev. 2-dev")
+	app.Version("v version", "Pliz 2 (build 4)")
 
 	// option to change the Pliz env
 	plizEnv := app.String(cli.StringOpt{
@@ -64,6 +64,16 @@ func main() {
 		cmd.Action = func() {
 
 			config := config.Get()
+
+			if prod {
+				backup := prompter.YN("You're in production. Do you want to make a backup?", true)
+				fmt.Println("Backup:", backup)
+
+				ok := prompter.YN("The installation is going to start. Are you sure you want to continue?", false)
+				if !ok {
+					return
+				}
+			}
 
 			/*
 			 * 1. Duplicate and edit the config files (.env, docker_ports.yml...)
@@ -263,27 +273,6 @@ func main() {
 				fmt.Printf("Task '%s' executed.\n", task.Name)
 			}
 		}
-	})
-
-	app.Command("deploy", "Execute deployment tasks", func(cmd *cli.Cmd) {
-
-		cmd.Command("run", "Run a deployment", func(cmd *cli.Cmd) {
-
-			cmd.Action = func() {
-				backup := prompter.YN("Do you want to make a backup?", true)
-				fmt.Println("Backup:", backup)
-
-				ok := prompter.YN("Are you ready to deploy?", false)
-				if !ok {
-					return
-				}
-
-				cmd := domain.NewCommand([]string{"docker-compose", "-f", "docker-compose.yml", "-f", "docker-compose.prod.yml", "up", "-d", "proxy"})
-				cmd.Execute()
-			}
-
-		})
-
 	})
 
 	app.Run(os.Args)
