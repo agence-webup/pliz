@@ -44,17 +44,22 @@ func NewCommand(list []string) Command {
 	return Command{Name: name, Args: args}
 }
 
-func NewContainerCommand(container string, list []string, prod bool) Command {
+func NewComposeCommand(list []string, prod bool) Command {
 	name := "docker-compose"
 
-	var args []string
+	args := []string{}
 	if prod {
-		args = []string{"-f", "docker-compose.yml", "-f", "docker-compose.prod.yml", "run", "--rm", container}
-	} else {
-		args = []string{"run", "--rm", container}
+		args = []string{"-f", "docker-compose.yml", "-f", "docker-compose.prod.yml"}
 	}
 
 	args = append(args, list...)
 
 	return Command{Name: name, Args: args}
+}
+
+func NewContainerCommand(container string, list []string, prod bool) Command {
+	args := []string{"run", "--rm", container}
+	args = append(args, list...)
+
+	return NewComposeCommand(args, prod)
 }
