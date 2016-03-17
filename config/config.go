@@ -52,6 +52,7 @@ func (parsed parserConfig) convertToConfig(config *domain.Config) error {
 		Proxy:   "proxy",
 		App:     "app",
 		Builder: "srcbuild",
+		Db:      "db",
 	}
 	if proxyContainerName, ok := parsed.Containers["proxy"]; ok {
 		containerConfig.Proxy = proxyContainerName
