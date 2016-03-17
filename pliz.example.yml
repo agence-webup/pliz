@@ -57,3 +57,8 @@ watch:
 checklist:
   - Check if your .env is correctly configured
   - Don't forget to run 'pliz bash app; php artisan key:generate' if needed
+
+backup:
+  files:
+    - storage/app
+    - database.sqlite

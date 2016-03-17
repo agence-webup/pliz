@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"sort"
+
 	"webup/pliz/actions"
 	"webup/pliz/config"
 	"webup/pliz/domain"
@@ -26,6 +27,7 @@ func main() {
 		Desc:  "Change the environnment of Pliz (i.e. 'prod'). The environment var 'PLIZ_ENV' can be use too.",
 	})
 	prod := false
+	var executionContext domain.ExecutionContext
 
 	app.Before = func() {
 		// Parse and check config
@@ -35,6 +37,8 @@ func main() {
 		if *plizEnv == "prod" || os.Getenv("PLIZ_ENV") == "prod" {
 			prod = true
 		}
+
+		executionContext = domain.ExecutionContext{Env: *plizEnv}
 	}
 
 	app.Command("start", "Start (or restart) the project", func(cmd *cli.Cmd) {
@@ -212,6 +216,10 @@ func main() {
 				cmd.Action = actions.RunTaskActionHandler(task, prod)
 			})
 		}
+	})
+
+	app.Command("backup", "Perform a backup of the project", func(cmd *cli.Cmd) {
+		cmd.Action = actions.BackupActionHandler(executionContext)
 	})
 
 	app.Run(os.Args)

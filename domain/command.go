@@ -29,6 +29,19 @@ func (c Command) Execute() {
 	cmd.Run()
 }
 
+func (c Command) GetResult() (string, error) {
+	cmd := exec.Command(c.Name, c.Args...)
+
+	out, err := cmd.Output()
+	if err != nil {
+		return "", err
+	}
+
+	output := strings.TrimSpace(string(out))
+
+	return output, nil
+}
+
 func NewCommand(list []string) Command {
 	var name string
 	var args []string
