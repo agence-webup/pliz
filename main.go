@@ -38,21 +38,45 @@ func main() {
 
 	app.Command("start", "Start the project", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
-			cmd := domain.NewCommand([]string{"docker-compose", "up", "-d", config.Get().Containers.Proxy})
+
+			var args []string
+			if prod {
+				args = []string{"docker-compose", "-f", "docker-compose.yml", "-f", "docker-compose.prod.yml", "up", "-d", config.Get().Containers.Proxy}
+			} else {
+				args = []string{"docker-compose", "up", "-d", config.Get().Containers.Proxy}
+			}
+
+			cmd := domain.NewCommand(args)
 			cmd.Execute()
 		}
 	})
 
 	app.Command("stop", "Stop the project", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
-			cmd := domain.NewCommand([]string{"docker-compose", "stop"})
+
+			var args []string
+			if prod {
+				args = []string{"docker-compose", "-f", "docker-compose.yml", "-f", "docker-compose.prod.yml", "stop", config.Get().Containers.Proxy}
+			} else {
+				args = []string{"docker-compose", "stop", config.Get().Containers.Proxy}
+			}
+
+			cmd := domain.NewCommand(args)
 			cmd.Execute()
 		}
 	})
 
 	app.Command("restart", "Restart the project", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
-			cmd := domain.NewCommand([]string{"docker-compose", "restart"})
+
+			var args []string
+			if prod {
+				args = []string{"docker-compose", "-f", "docker-compose.yml", "-f", "docker-compose.prod.yml", "restart", config.Get().Containers.Proxy}
+			} else {
+				args = []string{"docker-compose", "restart", config.Get().Containers.Proxy}
+			}
+
+			cmd := domain.NewCommand(args)
 			cmd.Execute()
 		}
 	})
