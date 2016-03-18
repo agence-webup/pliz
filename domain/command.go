@@ -42,6 +42,21 @@ func (c Command) GetResult() (string, error) {
 	return output, nil
 }
 
+func (c Command) WriteResultToFile(file *os.File) error {
+	cmd := exec.Command(c.Name, c.Args...)
+
+	cmd.Stdout = file
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+	fmt.Printf("Executing: %s\n", c)
+	fmt.Printf("Writing to file: %s\n", file.Name())
+
+	return nil
+}
+
 func NewCommand(list []string) Command {
 	var name string
 	var args []string
