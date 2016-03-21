@@ -153,11 +153,21 @@ func main() {
 
 		defaultContainer := config.Get().Containers.Builder
 
-		cmd.Spec = "[SERVICE]"
+		cmd.Spec = "[-p...] [SERVICE]"
+
 		container := cmd.StringArg("SERVICE", defaultContainer, "The Compose service that will be used to display the shell")
+		ports := cmd.StringsOpt("p port", []string{}, "List of ports that will be published (e.g. 9000:3306)")
 
 		cmd.Action = func() {
-			cmd := domain.NewContainerCommand(*container, []string{"bash"}, prod)
+
+			options := []string{}
+			if len(*ports) > 0 {
+				for _, port := range *ports {
+					options = append(options, "-p", port)
+				}
+			}
+
+			cmd := domain.NewContainerCommand(*container, []string{"bash"}, options, prod)
 			cmd.Execute()
 		}
 	})

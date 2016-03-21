@@ -22,7 +22,7 @@ func (t Task) Execute(context TaskExecutionContext) bool {
 
 	var command Command
 	if t.Container != nil {
-		command = NewContainerCommand(*t.Container, t.CommandArgs, context.Prod)
+		command = NewContainerCommand(*t.Container, t.CommandArgs, []string{}, context.Prod)
 	} else {
 		command = NewCommand(t.CommandArgs)
 	}

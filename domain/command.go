@@ -57,8 +57,14 @@ func NewComposeCommand(list []string, prod bool) Command {
 	return Command{Name: name, Args: args}
 }
 
-func NewContainerCommand(container string, list []string, prod bool) Command {
-	args := []string{"run", "--rm", container}
+func NewContainerCommand(container string, list []string, options []string, prod bool) Command {
+	args := []string{"run", "--rm"}
+
+	// append the options
+	args = append(args, options...)
+	// the container
+	args = append(args, container)
+	// and the command args
 	args = append(args, list...)
 
 	return NewComposeCommand(args, prod)

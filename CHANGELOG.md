@@ -1,6 +1,7 @@
 # rev 2-dev
 WIP
 
+- Add the option `-p` for `pliz bash` allowing to publish some ports (e.g. exposing ports needed by BrowserSync)
 - Remove the 'restart' command (always use 'start')
 - Handle the production environment with the option `--env`: use the docker-compose.prod.yml instead of docker-compose.override.yml
 - Don't use a hard link for config files anymore. Classic file's content copy instead.
