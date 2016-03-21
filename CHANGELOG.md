@@ -1,6 +1,7 @@
 # rev 2-dev
 WIP
 
+- Remove the 'restart' command (always use 'start')
 - Handle the production environment with the option `--env`: use the docker-compose.prod.yml instead of docker-compose.override.yml
 - Don't use a hard link for config files anymore. Classic file's content copy instead.
 - Fix issue with `pliz bash`: the config was not parsed before attempting to use it

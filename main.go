@@ -16,7 +16,7 @@ func main() {
 
 	app := cli.App("pliz", "Manage projects building")
 
-	app.Version("v version", "Pliz 2 (build 4)")
+	app.Version("v version", "Pliz 2-dev (build 5)")
 
 	// option to change the Pliz env
 	plizEnv := app.String(cli.StringOpt{
@@ -28,7 +28,7 @@ func main() {
 
 	app.Before = func() {
 		// Parse and check config
-		ParseAndCheckConfig()
+		parseAndCheckConfig()
 
 		// check for env
 		if *plizEnv == "prod" || os.Getenv("PLIZ_ENV") == "prod" {
@@ -36,47 +36,16 @@ func main() {
 		}
 	}
 
-	app.Command("start", "Start the project", func(cmd *cli.Cmd) {
+	app.Command("start", "Start (or restart) the project", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
-
-			var args []string
-			if prod {
-				args = []string{"docker-compose", "-f", "docker-compose.yml", "-f", "docker-compose.prod.yml", "up", "-d", config.Get().Containers.Proxy}
-			} else {
-				args = []string{"docker-compose", "up", "-d", config.Get().Containers.Proxy}
-			}
-
-			cmd := domain.NewCommand(args)
+			cmd := domain.NewComposeCommand([]string{"up", "-d", config.Get().Containers.Proxy}, prod)
 			cmd.Execute()
 		}
 	})
 
 	app.Command("stop", "Stop the project", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
-
-			var args []string
-			if prod {
-				args = []string{"docker-compose", "-f", "docker-compose.yml", "-f", "docker-compose.prod.yml", "stop", config.Get().Containers.Proxy}
-			} else {
-				args = []string{"docker-compose", "stop", config.Get().Containers.Proxy}
-			}
-
-			cmd := domain.NewCommand(args)
-			cmd.Execute()
-		}
-	})
-
-	app.Command("restart", "Restart the project", func(cmd *cli.Cmd) {
-		cmd.Action = func() {
-
-			var args []string
-			if prod {
-				args = []string{"docker-compose", "-f", "docker-compose.yml", "-f", "docker-compose.prod.yml", "restart", config.Get().Containers.Proxy}
-			} else {
-				args = []string{"docker-compose", "restart", config.Get().Containers.Proxy}
-			}
-
-			cmd := domain.NewCommand(args)
+			cmd := domain.NewComposeCommand([]string{"stop"}, prod)
 			cmd.Execute()
 		}
 	})
@@ -136,13 +105,7 @@ func main() {
 
 			fmt.Printf("\n ▶ ️ Build the containers...\n")
 
-			var args []string
-			if prod {
-				args = []string{"docker-compose", "-f", "docker-compose.yml", "-f", "docker-compose.prod.yml", "build"}
-			} else {
-				args = []string{"docker-compose", "build"}
-			}
-			cmd := domain.NewCommand(args)
+			cmd := domain.NewComposeCommand([]string{"build"}, prod)
 			cmd.Execute()
 
 			fmt.Println("")
@@ -186,7 +149,7 @@ func main() {
 	app.Command("bash", "Display a shell inside the builder service (or the specified service)", func(cmd *cli.Cmd) {
 
 		// parse and check config
-		ParseAndCheckConfig()
+		parseAndCheckConfig()
 
 		defaultContainer := config.Get().Containers.Builder
 
@@ -194,31 +157,6 @@ func main() {
 		container := cmd.StringArg("SERVICE", defaultContainer, "The Compose service that will be used to display the shell")
 
 		cmd.Action = func() {
-
-			// NOTE: this code allows to run a shell inside a running container. Not used currently.
-
-			// cmd1 := exec.Command("docker-compose", "ps", "-q", *container)
-			// output, err := cmd1.Output()
-			// if err != nil {
-			// 	fmt.Println(err)
-			// 	cli.Exit(1)
-			// 	return
-			// }
-			// containerId := strings.TrimSpace(string(output))
-			// if containerId == "" {
-			// 	fmt.Printf("The container '%s' is not running.", *container)
-			// 	cli.Exit(1)
-			// 	return
-			// }
-			//
-			// cmd := domain.NewCommand([]string{
-			// 	"docker",
-			// 	"exec",
-			// 	"-it",
-			// 	containerId,
-			// 	"bash",
-			// })
-
 			cmd := domain.NewContainerCommand(*container, []string{"bash"}, prod)
 			cmd.Execute()
 		}
@@ -231,18 +169,13 @@ func main() {
 
 		cmd.Action = func() {
 
-			var args []string
-			if prod {
-				args = []string{"docker-compose", "-f", "docker-compose.yml", "-f", "docker-compose.prod.yml", "logs"}
-			} else {
-				args = []string{"docker-compose", "logs"}
-			}
+			args := []string{"logs"}
 
 			if *container != "" {
 				args = append(args, *container)
 			}
 
-			cmd := domain.NewCommand(args)
+			cmd := domain.NewComposeCommand(args, prod)
 			cmd.Execute()
 		}
 	})
@@ -302,7 +235,7 @@ func main() {
 	app.Run(os.Args)
 }
 
-func ParseAndCheckConfig() {
+func parseAndCheckConfig() {
 	err := config.Check()
 	if err != nil {
 		os.Exit(1)
