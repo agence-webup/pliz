@@ -3,9 +3,10 @@ package main
 import (
 	"fmt"
 	"os"
+	"sort"
+	"webup/pliz/actions"
 	"webup/pliz/config"
 	"webup/pliz/domain"
-	"webup/pliz/tasks"
 	"webup/pliz/utils"
 
 	"github.com/Songmu/prompter"
@@ -116,7 +117,10 @@ func main() {
 
 			fmt.Printf("\n ▶ ️ Run install tasks...\n")
 
-			for _, task := range config.EnabledTasks {
+			for _, id := range config.InstallTasks {
+
+				task := config.Tasks[id]
+
 				fmt.Println("\n*** " + task.Name + " ***")
 
 				// disable the execution check if the installation is forced
@@ -190,55 +194,23 @@ func main() {
 		}
 	})
 
-	app.Command("tasks", "List the available tasks", func(cmd *cli.Cmd) {
-		cmd.Action = func() {
-			tasks := tasks.AllTaskNames()
+	app.Command("run", "Execute a single task", func(cmd *cli.Cmd) {
 
-			fmt.Println("Available tasks:")
-			for _, task := range tasks {
-				fmt.Printf("   %s\n", task)
-			}
+		// parse and check config
+		parseAndCheckConfig()
+
+		taskIDs := []string{}
+		for id := range config.Get().Tasks {
+			taskIDs = append(taskIDs, string(id))
 		}
-	})
+		sort.Strings(taskIDs)
 
-	app.Command("run", "Execute a task", func(cmd *cli.Cmd) {
+		for _, id := range taskIDs {
+			task := config.Get().Tasks[domain.TaskID(id)]
 
-		cmd.Spec = "TASK"
-		taskName := cmd.StringArg("TASK", "", "Execute the specified task. Run 'pliz tasks' to get the list of the tasks")
-
-		cmd.Action = func() {
-
-			var task domain.Task
-
-			// first, search for the enabled task (which could be overrided)
-			taskFound := false
-			for _, t := range config.Get().EnabledTasks {
-				if *taskName == t.Name {
-					task = t
-					taskFound = true
-					break
-				}
-			}
-
-			// if no task is found, try to create a default task
-			if !taskFound {
-				// get the task
-				defaultTask, err := tasks.CreateTaskWithName(*taskName, config.Get())
-				if err != nil {
-					fmt.Println(err)
-					cli.Exit(1)
-					return
-				} else {
-					task = defaultTask
-				}
-			}
-
-			// disable the execution check for standalone execution
-			task.ExecutionCheck = nil
-
-			if task.Execute(domain.TaskExecutionContext{Prod: prod}) {
-				fmt.Printf("Task '%s' executed.\n", task.Name)
-			}
+			cmd.Command(id, task.Description, func(cmd *cli.Cmd) {
+				cmd.Action = actions.RunTaskActionHandler(task, prod)
+			})
 		}
 	})
 

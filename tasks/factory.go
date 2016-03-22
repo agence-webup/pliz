@@ -5,16 +5,6 @@ import (
 	"webup/pliz/domain"
 )
 
-func AllTaskNames() []string {
-	return []string{
-		"npm",
-		"bower",
-		"composer",
-		"gulp",
-		"db-update",
-	}
-}
-
 func CreateTaskWithName(name domain.TaskID, config domain.Config) (domain.Task, error) {
 
 	// default tasks
@@ -30,13 +20,6 @@ func CreateTaskWithName(name domain.TaskID, config domain.Config) (domain.Task, 
 	case "db-update":
 		return DbUpdateTask(config.Containers.App), nil
 	}
-
-	// custom tasks
-	// for _, task := range config.CustomTasks {
-	// 	if name == task.Name {
-	// 		return task, nil
-	// 	}
-	// }
 
 	return domain.Task{}, fmt.Errorf("Unable to find the task '%s'\n", name)
 }

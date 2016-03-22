@@ -119,7 +119,7 @@ func (parsed parserConfig) convertToConfig(config *domain.Config) error {
 
 			// check if the custom task is valid
 			if err := taskSpec.IsValidForCustomTask(); err != nil {
-				return err
+				return fmt.Errorf("Custom task error: %v", err)
 			}
 
 			task := domain.Task{Name: id, Description: taskSpec.Description}
@@ -167,7 +167,11 @@ func parseConfigFile() (domain.Config, error) {
 		return config, err
 	}
 
-	parsed.convertToConfig(&config)
+	err = parsed.convertToConfig(&config)
+	if err != nil {
+		fmt.Println(err)
+		return config, err
+	}
 
 	return config, nil
 }
