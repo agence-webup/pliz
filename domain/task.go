@@ -5,12 +5,24 @@ import (
 	"strings"
 )
 
+type TaskID string
+
 type Task struct {
-	Name           string
+	Name           TaskID
 	Description    string
 	Container      *string
 	ExecutionCheck TaskExecutionCheck
 	CommandArgs    CommandArgs
+}
+
+func DefaultTaskNames() []TaskID {
+	return []TaskID{
+		"npm",
+		"bower",
+		"composer",
+		"gulp",
+		"db-update",
+	}
 }
 
 func (t Task) Execute(context TaskExecutionContext) bool {

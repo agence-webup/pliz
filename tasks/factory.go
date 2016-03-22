@@ -1,7 +1,6 @@
 package tasks
 
 import (
-	"errors"
 	"fmt"
 	"webup/pliz/domain"
 )
@@ -16,7 +15,7 @@ func AllTaskNames() []string {
 	}
 }
 
-func CreateTaskWithName(name string, config domain.Config) (domain.Task, error) {
+func CreateTaskWithName(name domain.TaskID, config domain.Config) (domain.Task, error) {
 
 	// default tasks
 	switch name {
@@ -33,11 +32,11 @@ func CreateTaskWithName(name string, config domain.Config) (domain.Task, error) 
 	}
 
 	// custom tasks
-	for _, task := range config.CustomTasks {
-		if name == task.Name {
-			return task, nil
-		}
-	}
+	// for _, task := range config.CustomTasks {
+	// 	if name == task.Name {
+	// 		return task, nil
+	// 	}
+	// }
 
-	return domain.Task{}, errors.New(fmt.Sprintf("Unable to find the task '%s'\n", name))
+	return domain.Task{}, fmt.Errorf("Unable to find the task '%s'\n", name)
 }

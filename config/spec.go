@@ -1,25 +1,24 @@
 package config
 
+import "errors"
+
 type TaskSpec struct {
-	Name     string            `yaml:"name"`
-	Override *TaskOverrideSpec `yaml:"override"`
-}
-
-type TaskOverrideSpec struct {
-	Container   *string   `yaml:"container"`
-	CommandArgs *[]string `yaml:"command"`
-}
-
-type CustomTaskSpec struct {
 	Name        string   `yaml:"name"`
 	Description string   `yaml:"description"`
 	Container   string   `yaml:"container"`
 	CommandArgs []string `yaml:"command"`
 }
 
-func (task CustomTaskSpec) IsValid() bool {
-	if task.Name == "" || task.Container == "" || len(task.CommandArgs) == 0 {
-		return false
+func (task TaskSpec) IsValidForCustomTask() error {
+	if task.Name == "" {
+		return errors.New("'name' is required")
 	}
-	return true
+	if task.Container == "" {
+		return errors.New("'container' is required")
+	}
+	if len(task.CommandArgs) == 0 {
+		return errors.New("'command' is required")
+	}
+
+	return nil
 }

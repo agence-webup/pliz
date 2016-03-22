@@ -41,9 +41,9 @@ func Get() domain.Config {
 type parserConfig struct {
 	Containers   map[string]string `yaml:"containers"`
 	ConfigFiles  map[string]string `yaml:"config_files"`
-	EnabledTasks []TaskSpec        `yaml:"enabled_tasks"`
+	Tasks        []TaskSpec        `yaml:"tasks"`
+	InstallTasks []domain.TaskID   `yaml:"install_tasks"`
 	Checklist    []string          `yaml:"checklist"`
-	CustomTasks  []CustomTaskSpec  `yaml:"custom_tasks"`
 }
 
 func (parsed parserConfig) convertToConfig(config *domain.Config) error {
@@ -72,59 +72,76 @@ func (parsed parserConfig) convertToConfig(config *domain.Config) error {
 	}
 	config.ConfigFiles = configFiles
 
-	// custom tasks
-	// NOTE: must be handled before the enabled tasks because the custom tasks can be specified inside the enabled tasks
-	customTasks := []domain.Task{}
-	for i, taskSpec := range parsed.CustomTasks {
-
-		// check if the custom task is valid
-		if taskSpec.IsValid() {
-			task := domain.Task{Name: taskSpec.Name, Description: taskSpec.Description}
-			// check if the container is specified
-			if taskSpec.Container != "none" {
-				task.Container = &(parsed.CustomTasks[i].Container)
-			}
-			// command args
-			task.CommandArgs = taskSpec.CommandArgs
-			customTasks = append(customTasks, task)
-		}
-	}
-	config.CustomTasks = customTasks
-
-	// enabled tasks
-	enabledTasks := []domain.Task{}
-	for _, taskSpec := range parsed.EnabledTasks {
-
-		task, err := tasks.CreateTaskWithName(taskSpec.Name, *config)
+	// will be used to prepare the list of the available tasks (default & custom tasks)
+	tasksByID := map[domain.TaskID]domain.Task{}
+	for _, id := range domain.DefaultTaskNames() {
+		task, err := tasks.CreateTaskWithName(id, *config)
 		if err != nil {
-			fmt.Println(err)
-			continue
+			return err
 		}
 
-		// check for override
-		if taskSpec.Override != nil {
+		tasksByID[id] = task
+	}
+
+	// tasks
+	for i, taskSpec := range parsed.Tasks {
+
+		id := domain.TaskID(taskSpec.Name)
+
+		// check if the task is an overrided default task
+		if task, ok := tasksByID[id]; ok {
+
+			// overrided description (not required)
+			if taskSpec.Description != "" {
+				task.Description = taskSpec.Description
+			}
 
 			// check if a container is specified
 			// if the value is 'none', the command will be run on the host
-			if taskSpec.Override.Container != nil {
-				if *taskSpec.Override.Container != "none" {
-					task.Container = taskSpec.Override.Container
+			if taskSpec.Container != "" {
+				if taskSpec.Container != "none" {
+					task.Container = &(parsed.Tasks[i].Container)
 				} else {
 					task.Container = nil
 				}
 			}
 
 			// check if the command is overrided
-			if taskSpec.Override.CommandArgs != nil && len(*taskSpec.Override.CommandArgs) > 0 {
-				task.CommandArgs = *taskSpec.Override.CommandArgs
+			if len(taskSpec.CommandArgs) > 0 {
+				task.CommandArgs = taskSpec.CommandArgs
 			} else {
-				fmt.Println("Not enough args to execute the command")
+				return fmt.Errorf("Not enough args to execute the command of the task '%s'", taskSpec.Name)
 			}
-		}
 
-		enabledTasks = append(enabledTasks, task)
+			tasksByID[id] = task
+		} else {
+			// it's a custom task
+
+			// check if the custom task is valid
+			if err := taskSpec.IsValidForCustomTask(); err != nil {
+				return err
+			}
+
+			task := domain.Task{Name: id, Description: taskSpec.Description}
+			// check if the container is specified
+			if taskSpec.Container != "none" {
+				task.Container = &(parsed.Tasks[i].Container)
+			}
+			// command args
+			task.CommandArgs = taskSpec.CommandArgs
+
+			tasksByID[id] = task
+		}
 	}
-	config.EnabledTasks = enabledTasks
+	config.Tasks = tasksByID
+
+	// install tasks
+	for _, id := range parsed.InstallTasks {
+		if _, ok := config.Tasks[id]; !ok {
+			return fmt.Errorf("Install tasks: '%s' is not available", id)
+		}
+	}
+	config.InstallTasks = parsed.InstallTasks
 
 	// checklist
 	config.Checklist = parsed.Checklist

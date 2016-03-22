@@ -12,9 +12,32 @@ config_files:
   docker_ports.sample.yml: docker_ports.yml
   # ...
 
+install_tasks:
+  - npm
+  - bower
+  - composer
+  - key_generate
+
+tasks:
+  - name: npm
+    container: srcbuild # can be 'none' to run the command on the host
+    command: ["echo", "as you arrrrre!"]
+  - name: key_generate
+    description: Generate the key used the encrypt cookies
+    container: none
+    command:
+      - sh
+      - "-c"
+      - nom="Bruno";
+        if [ $nom = "Bruno" ];
+        then
+          echo "Salut Bruno !";
+        fi;
+
+
 enabled_tasks:
   - name: npm
-    override:
+    config:
       container: srcbuild # can be 'none' to run the command on the host
       command: ["echo", "as you arrrrre!"]
   - name: bower
@@ -34,16 +57,3 @@ watch:
 checklist:
   - Check if your .env is correctly configured
   - Don't forget to run 'pliz bash app; php artisan key:generate' if needed
-
-custom_tasks:
-  - name: key_generate
-    description: Generate the key used the encrypt cookies
-    container: none
-    command:
-      - sh
-      - "-c"
-      - nom="Bruno";
-        if [ $nom = "Bruno" ];
-        then
-          echo "Salut Bruno !";
-        fi;

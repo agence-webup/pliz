@@ -114,7 +114,7 @@ func main() {
 			 * 3. Run the enabled tasks
 			 */
 
-			fmt.Printf("\n ▶ ️ Run enabled tasks...\n")
+			fmt.Printf("\n ▶ ️ Run install tasks...\n")
 
 			for _, task := range config.EnabledTasks {
 				fmt.Println("\n*** " + task.Name + " ***")
