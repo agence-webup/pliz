@@ -9,6 +9,8 @@ import (
 	"strings"
 	"webup/pliz/config"
 	"webup/pliz/domain"
+
+	"github.com/jhoonb/archivex"
 )
 
 type containerConfig struct {
@@ -35,7 +37,7 @@ func BackupActionHandler(ctx domain.ExecutionContext) func() {
 
 		// databases dump
 		for _, dbService := range config.Get().BackupConfig.Databases {
-			dir := path.Join(backupDir, "databases", dbService)
+			dir := path.Join(backupDir, "backup", "databases", dbService)
 			err := os.MkdirAll(dir, 0777)
 			if err != nil {
 				fmt.Println(err)
@@ -45,7 +47,7 @@ func BackupActionHandler(ctx domain.ExecutionContext) func() {
 		}
 
 		// files
-		filesDir := path.Join(backupDir, "files")
+		filesDir := path.Join(backupDir, "backup", "files")
 		os.Mkdir(filesDir, 0777)
 		for _, file := range config.Get().BackupConfig.Files {
 			os.Link(file, path.Join(filesDir, file))
@@ -56,7 +58,13 @@ func BackupActionHandler(ctx domain.ExecutionContext) func() {
 		// 	return err
 		// }
 
-		os.Rename(backupDir, "backup-test")
+		tar := new(archivex.TarFile)
+		tar.Create(path.Join(backupDir, "backup_archive.tar.gz"))
+		tar.AddAll(path.Join(backupDir, "backup"), false)
+		tar.Close()
+
+		os.Rename(path.Join(backupDir, "backup_archive.tar.gz"), "backup-test.tar.gz")
+		os.RemoveAll(backupDir)
 
 	}
 }
