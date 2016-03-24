@@ -33,9 +33,22 @@ func BackupActionHandler(ctx domain.ExecutionContext) func() {
 			return
 		}
 
-		// dump
+		// databases dump
 		for _, dbService := range config.Get().BackupConfig.Databases {
-			makeDump(ctx, dbService, backupDir)
+			dir := path.Join(backupDir, "databases", dbService)
+			err := os.MkdirAll(dir, 0777)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+			makeDump(ctx, dbService, dir)
+		}
+
+		// files
+		filesDir := path.Join(backupDir, "files")
+		os.Mkdir(filesDir, 0777)
+		for _, file := range config.Get().BackupConfig.Files {
+			os.Link(file, path.Join(filesDir, file))
 		}
 
 		// if err := cmd.WriteResultToFile(file); err != nil {
@@ -78,6 +91,7 @@ func makeDump(ctx domain.ExecutionContext, dbContainer string, backupDir string)
 	}
 
 	if strings.Contains(config.Image, "mysql") {
+		fmt.Println(path.Join(backupDir, "dump.sql"))
 		err := mysqlDump(path.Join(backupDir, "dump.sql"), containerId, env)
 		if err != nil {
 			fmt.Println(err)
