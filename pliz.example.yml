@@ -59,6 +59,11 @@ checklist:
   - Don't forget to run 'pliz bash app; php artisan key:generate' if needed
 
 backup:
+  # list of the files or directories to backup
   files:
     - storage/app
     - database.sqlite
+  # list of the compose services to backup
+  # supported DB: MySQL or MongoDB
+  databases:
+    - db
