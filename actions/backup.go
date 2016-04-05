@@ -123,6 +123,14 @@ func makeDump(ctx domain.ExecutionContext, dbContainer string, backupDir string)
 		if err != nil {
 			fmt.Println(err)
 		}
+	} else if strings.Contains(config.Image, "mongo") {
+		fmt.Println(path.Join(backupDir, "mongodb.archive"))
+		err := mongoDump(path.Join(backupDir, "mongodb.archive"), containerId, env)
+		if err != nil {
+			fmt.Println(err)
+		}
+	} else {
+		fmt.Println("\nError: unsupported database (only MySQL or MongoDB)")
 	}
 
 }
@@ -140,6 +148,27 @@ func mysqlDump(destination string, containerId string, env containerEnv) error {
 	}
 
 	cmd := domain.NewCommand([]string{"docker", "exec", "-i", containerId, "mysqldump", fmt.Sprintf("--password=%s", password), database})
+
+	file, err := ioutil.TempFile("", "plizdump")
+	if err != nil {
+		fmt.Println("Unable to create a tmp file:")
+		return err
+	}
+	defer file.Close()
+
+	if err := cmd.WriteResultToFile(file); err != nil {
+		os.Remove(file.Name())
+		return err
+	}
+
+	os.Rename(file.Name(), destination)
+
+	return nil
+}
+
+func mongoDump(destination string, containerId string, env containerEnv) error {
+
+	cmd := domain.NewCommand([]string{"docker", "exec", "-i", containerId, "mongodump", "--archive"})
 
 	file, err := ioutil.TempFile("", "plizdump")
 	if err != nil {
