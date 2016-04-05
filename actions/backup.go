@@ -115,7 +115,7 @@ func mysqlDump(destination string, containerId string, env containerEnv) error {
 		password = value
 	}
 
-	database := ""
+	database := "db"
 	if value, ok := env["MYSQL_DATABASE"]; ok {
 		database = value
 	}

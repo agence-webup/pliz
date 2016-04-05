@@ -63,7 +63,7 @@ backup:
   files:
     - storage/app
     - database.sqlite
-  # list of the compose services to backup
+  # list of the compose DB services to backup
   # supported DB: MySQL or MongoDB
   databases:
     - db
