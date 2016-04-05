@@ -7,9 +7,11 @@ import (
 	"os"
 	"path"
 	"strings"
+	"time"
 	"webup/pliz/config"
 	"webup/pliz/domain"
 
+	"github.com/Songmu/prompter"
 	"github.com/jhoonb/archivex"
 )
 
@@ -28,6 +30,15 @@ func BackupActionHandler(ctx domain.ExecutionContext) func() {
 			return
 		}
 
+		fmt.Println("What do you want to backup ?")
+		backupFiles := prompter.YN("Files", true)
+		backupDB := prompter.YN("DB", true)
+
+		if !backupFiles && !backupDB {
+			fmt.Println("Are you serious? Tsss...")
+			return
+		}
+
 		// prepare the directory to store the backup
 		backupDir, err := ioutil.TempDir("", "plizbackup")
 		if err != nil {
@@ -35,22 +46,26 @@ func BackupActionHandler(ctx domain.ExecutionContext) func() {
 			return
 		}
 
-		// databases dump
-		for _, dbService := range config.Get().BackupConfig.Databases {
-			dir := path.Join(backupDir, "backup", "databases", dbService)
-			err := os.MkdirAll(dir, 0777)
-			if err != nil {
-				fmt.Println(err)
-				return
+		if backupDB {
+			// databases dump
+			for _, dbService := range config.Get().BackupConfig.Databases {
+				dir := path.Join(backupDir, "backup", "databases", dbService)
+				err := os.MkdirAll(dir, 0755)
+				if err != nil {
+					fmt.Println(err)
+					return
+				}
+				makeDump(ctx, dbService, dir)
 			}
-			makeDump(ctx, dbService, dir)
 		}
 
-		// files
-		filesDir := path.Join(backupDir, "backup", "files")
-		os.Mkdir(filesDir, 0777)
-		for _, file := range config.Get().BackupConfig.Files {
-			os.Link(file, path.Join(filesDir, file))
+		if backupFiles {
+			// files
+			filesDir := path.Join(backupDir, "backup", "files")
+			os.MkdirAll(filesDir, 0755)
+			for _, file := range config.Get().BackupConfig.Files {
+				os.Link(file, path.Join(filesDir, file))
+			}
 		}
 
 		// if err := cmd.WriteResultToFile(file); err != nil {
@@ -63,9 +78,13 @@ func BackupActionHandler(ctx domain.ExecutionContext) func() {
 		tar.AddAll(path.Join(backupDir, "backup"), false)
 		tar.Close()
 
-		os.Rename(path.Join(backupDir, "backup_archive.tar.gz"), "backup-test.tar.gz")
+		now := time.Now().UTC()
+		year, month, day := now.Date()
+		hour, minutes, seconds := now.Clock()
+		os.Rename(path.Join(backupDir, "backup_archive.tar.gz"), fmt.Sprintf("backup-%d%02d%02d_%02d%02d%02d.tar.gz", year, month, day, hour, minutes, seconds))
 		os.RemoveAll(backupDir)
 
+		fmt.Println("\n ✓ Done")
 	}
 }
 
