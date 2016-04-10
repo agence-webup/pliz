@@ -24,6 +24,11 @@ func (task TaskSpec) IsValidForCustomTask() error {
 }
 
 type BackupSpec struct {
-	Files     []string `yaml:"files"`     // list of the files/directories to backup
-	Databases []string `yaml:"databases"` // list of the db services to backup
+	Files     []string             `yaml:"files"`     // list of the files/directories to backup
+	Databases []DatabaseBackupSpec `yaml:"databases"` // list of the db to backup
+}
+
+type DatabaseBackupSpec struct {
+	Container string `yaml:"container"`
+	Type      string `yaml:"type"`
 }

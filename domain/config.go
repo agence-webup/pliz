@@ -29,5 +29,10 @@ func (c ContainerConfig) All() []string {
 
 type Backup struct {
 	Files     []string
-	Databases []string
+	Databases []DatabaseBackupConfig
+}
+
+type DatabaseBackupConfig struct {
+	Container string
+	Type      string
 }

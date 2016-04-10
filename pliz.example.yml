@@ -66,4 +66,5 @@ backup:
   # list of the compose DB services to backup
   # supported DB: MySQL or MongoDB
   databases:
-    - db
+    - container: db
+      type: mongo # mysql|mongo, optional. If not present, the image name is used to try to guess the type

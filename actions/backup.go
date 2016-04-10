@@ -48,14 +48,14 @@ func BackupActionHandler(ctx domain.ExecutionContext) func() {
 
 		if backupDB {
 			// databases dump
-			for _, dbService := range config.Get().BackupConfig.Databases {
-				dir := path.Join(backupDir, "backup", "databases", dbService)
+			for _, dbBackup := range config.Get().BackupConfig.Databases {
+				dir := path.Join(backupDir, "backup", "databases", dbBackup.Container)
 				err := os.MkdirAll(dir, 0755)
 				if err != nil {
 					fmt.Println(err)
 					return
 				}
-				makeDump(ctx, dbService, dir)
+				makeDump(ctx, dbBackup, dir)
 			}
 		}
 
@@ -88,10 +88,10 @@ func BackupActionHandler(ctx domain.ExecutionContext) func() {
 	}
 }
 
-func makeDump(ctx domain.ExecutionContext, dbContainer string, backupDir string) {
+func makeDump(ctx domain.ExecutionContext, dbBackup domain.DatabaseBackupConfig, backupDir string) {
 
 	// fetch the container id for db
-	cmd := domain.NewComposeCommand([]string{"ps", "-q", dbContainer}, ctx.IsProd())
+	cmd := domain.NewComposeCommand([]string{"ps", "-q", dbBackup.Container}, ctx.IsProd())
 	containerId, err := cmd.GetResult()
 	if err != nil {
 		fmt.Println("Unable to get the 'db' container id")
@@ -117,13 +117,24 @@ func makeDump(ctx domain.ExecutionContext, dbContainer string, backupDir string)
 		env[items[0]] = items[1]
 	}
 
-	if strings.Contains(config.Image, "mysql") {
+	// get the type of DB to backup
+	// check from config or try to find it with the image name
+	dbType := dbBackup.Type
+	if dbType == "" {
+		if strings.Contains(config.Image, "mysql") {
+			dbType = "mysql"
+		} else if strings.Contains(config.Image, "mongo") {
+			dbType = "mongo"
+		}
+	}
+
+	if dbType == "mysql" {
 		fmt.Println(path.Join(backupDir, "dump.sql"))
 		err := mysqlDump(path.Join(backupDir, "dump.sql"), containerId, env)
 		if err != nil {
 			fmt.Println(err)
 		}
-	} else if strings.Contains(config.Image, "mongo") {
+	} else if dbType == "mongo" {
 		fmt.Println(path.Join(backupDir, "mongodb.archive"))
 		err := mongoDump(path.Join(backupDir, "mongodb.archive"), containerId, env)
 		if err != nil {
