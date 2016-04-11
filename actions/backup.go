@@ -34,16 +34,22 @@ func BackupActionHandler(ctx domain.ExecutionContext) func() {
 		backupFiles := prompter.YN("Files", true)
 		backupDB := prompter.YN("DB", true)
 
-		if !backupFiles && !backupDB {
-			fmt.Println("Are you serious? Tsss...")
-			return
-		}
-
 		// prepare the directory to store the backup
 		backupDir, err := ioutil.TempDir("", "plizbackup")
 		if err != nil {
 			fmt.Printf("Unable to create a backup directory: %s\n", err)
 			return
+		}
+
+		// config files backup
+		if len(config.Get().ConfigFiles) > 0 {
+			dir := path.Join(backupDir, "backup", "config")
+			os.MkdirAll(dir, 0755)
+			for _, configFile := range config.Get().ConfigFiles {
+				if _, err := os.Stat(configFile.Target); err == nil {
+					os.Link(configFile.Target, path.Join(dir, configFile.Target))
+				}
+			}
 		}
 
 		if backupDB {
@@ -179,7 +185,7 @@ func mysqlDump(destination string, containerId string, env containerEnv) error {
 
 func mongoDump(destination string, containerId string, env containerEnv) error {
 
-	cmd := domain.NewCommand([]string{"docker", "exec", "-i", containerId, "mongodump", "--archive"})
+	cmd := domain.NewCommand([]string{"docker", "exec", "-i", containerId, "mongodump", "--archive", "--gzip"})
 
 	file, err := ioutil.TempFile("", "plizdump")
 	if err != nil {
