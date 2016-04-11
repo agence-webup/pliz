@@ -25,14 +25,15 @@ type containerEnv map[string]string
 func BackupActionHandler(ctx domain.ExecutionContext) func() {
 	return func() {
 
-		if len(config.Get().BackupConfig.Databases) == 0 && len(config.Get().BackupConfig.Files) == 0 {
-			fmt.Println("'backup' section is empty or not defined in the config file")
-			return
+		backupFiles := false
+		if len(config.Get().BackupConfig.Files) > 0 {
+			backupFiles = prompter.YN("Backup files?", true)
 		}
 
-		fmt.Println("What do you want to backup ?")
-		backupFiles := prompter.YN("Files", true)
-		backupDB := prompter.YN("DB", true)
+		backupDB := false
+		if len(config.Get().BackupConfig.Databases) > 0 {
+			backupDB = prompter.YN("Backup databases?", true)
+		}
 
 		// prepare the directory to store the backup
 		backupDir, err := ioutil.TempDir("", "plizbackup")
