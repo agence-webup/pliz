@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 	"time"
 	"webup/pliz/config"
@@ -48,7 +49,11 @@ func BackupActionHandler(ctx domain.ExecutionContext) func() {
 			os.MkdirAll(dir, 0755)
 			for _, configFile := range config.Get().ConfigFiles {
 				if _, err := os.Stat(configFile.Target); err == nil {
-					os.Link(configFile.Target, path.Join(dir, configFile.Target))
+					target := path.Join(dir, configFile.Target)
+					os.MkdirAll(filepath.Dir(target), 0755)
+					os.Link(configFile.Target, target)
+				} else {
+					fmt.Println(err)
 				}
 			}
 		}
@@ -71,7 +76,9 @@ func BackupActionHandler(ctx domain.ExecutionContext) func() {
 			filesDir := path.Join(backupDir, "backup", "files")
 			os.MkdirAll(filesDir, 0755)
 			for _, file := range config.Get().BackupConfig.Files {
-				os.Link(file, path.Join(filesDir, file))
+				target := path.Join(filesDir, file)
+				os.MkdirAll(filepath.Dir(target), 0755)
+				os.Link(file, target)
 			}
 		}
 
