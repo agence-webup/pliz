@@ -29,6 +29,10 @@ func (c Command) Execute() {
 	cmd.Run()
 }
 
+func (c Command) GetRawExecCommand() *exec.Cmd {
+	return exec.Command(c.Name, c.Args...)
+}
+
 func (c Command) GetResult() (string, error) {
 	cmd := exec.Command(c.Name, c.Args...)
 

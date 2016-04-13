@@ -222,6 +222,16 @@ func main() {
 		cmd.Action = actions.BackupActionHandler(executionContext)
 	})
 
+	app.Command("restore", "Restore a backup (Warning: files will be overrided)", func(cmd *cli.Cmd) {
+
+		cmd.Spec = "FILE"
+		file := cmd.StringArg("FILE", "", "A pliz backup file (tar.gz)")
+
+		cmd.Action = func() {
+			actions.RestoreActionHandler(*file)
+		}
+	})
+
 	app.Run(os.Args)
 }
 
