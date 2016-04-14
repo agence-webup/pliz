@@ -228,7 +228,7 @@ func main() {
 		file := cmd.StringArg("FILE", "", "A pliz backup file (tar.gz)")
 
 		cmd.Action = func() {
-			actions.RestoreActionHandler(*file)
+			actions.RestoreActionHandler(executionContext, *file)
 		}
 	})
 

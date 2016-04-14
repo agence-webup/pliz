@@ -2,7 +2,6 @@ package actions
 
 import (
 	"archive/tar"
-	"bufio"
 	"compress/gzip"
 	"fmt"
 	"io"
@@ -10,13 +9,29 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/Songmu/prompter"
+
 	"webup/pliz/config"
 	"webup/pliz/domain"
+	"webup/pliz/utils"
 )
 
-func RestoreActionHandler(file string) {
-	err := untar(file)
-	fmt.Println(err)
+// RestoreActionHandler handle the action for 'pliz restore'
+func RestoreActionHandler(ctx domain.ExecutionContext, file string) {
+
+	if ctx.IsProd() {
+		ok := prompter.YN("You're in production. Are you sure you want to continue?", false)
+		if !ok {
+			return
+		}
+	}
+
+	err := untar(ctx, file)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	fmt.Println("\n ✓ Done")
 }
 
 func ungzipReader(source string) (*gzip.Reader, error) {
@@ -34,7 +49,15 @@ func ungzipReader(source string) (*gzip.Reader, error) {
 	return archive, nil
 }
 
-func untar(tarball string) error {
+func untar(ctx domain.ExecutionContext, tarball string) error {
+
+	// choices
+	fmt.Println(" ▶ ️ Choose what you want to restore:")
+	configFilesRestoration := prompter.YN("     - configuration files", true)
+	filesRestoration := prompter.YN("     - others files", true)
+	dbRestoration := prompter.YN("     - database dumps", true)
+
+	fmt.Printf("\n\n")
 
 	reader, err := ungzipReader(tarball)
 	if err != nil {
@@ -55,36 +78,63 @@ func untar(tarball string) error {
 		info := header.FileInfo()
 
 		// config
-		if strings.HasPrefix(header.Name, "config/") {
-			dest := strings.Replace(header.Name, "config/", "", 1)
-			err := copyFile(dest, tarReader, info)
-			if err != nil {
-				return err
+		if configFilesRestoration {
+			if strings.HasPrefix(header.Name, "config/") {
+				dest := strings.Replace(header.Name, "config/", "", 1)
+
+				fmt.Printf(" → Restoring %s\n", dest)
+
+				err := copyFile(dest, tarReader, info)
+				if err != nil {
+					return err
+				}
 			}
 		}
 
 		// files
-		if strings.HasPrefix(header.Name, "files/") {
-			dest := strings.Replace(header.Name, "files/", "", 1)
-			err := copyFile(dest, tarReader, info)
-			if err != nil {
-				return err
+		if filesRestoration {
+			if strings.HasPrefix(header.Name, "files/") {
+				dest := strings.Replace(header.Name, "files/", "", 1)
+
+				fmt.Printf(" → Restoring %s\n", dest)
+
+				err := copyFile(dest, tarReader, info)
+				if err != nil {
+					return err
+				}
 			}
 		}
 
 		// databases
-		if strings.HasPrefix(header.Name, "databases/") {
-			dumpPath := strings.Replace(header.Name, "databases/", "", 1)
-			// separate path components to get dump info
-			comps := strings.Split(dumpPath, string(filepath.Separator))
+		if dbRestoration {
+			if strings.HasPrefix(header.Name, "databases/") {
+				dumpPath := strings.Replace(header.Name, "databases/", "", 1)
+				// separate path components to get dump info
+				comps := strings.Split(dumpPath, string(filepath.Separator))
 
-			for _, dbBackup := range config.Get().BackupConfig.Databases {
-				// search the container name
-				if comps[0] == dbBackup.Container {
-					if strings.Contains(comps[1], "mongo") {
-						restoreMongo(dbBackup, tarReader)
+				for _, dbBackup := range config.Get().BackupConfig.Databases {
+					// search the container name
+					if comps[0] == dbBackup.Container {
+
+						fmt.Printf("\n → Restoring %s\n", dbBackup.Container)
+
+						// get container id
+						cmd := domain.NewComposeCommand([]string{"ps", "-q", dbBackup.Container}, ctx.IsProd())
+						containerID, err := cmd.GetResult()
+						if err != nil {
+							fmt.Println("Unable to get the 'db' container id")
+						}
+
+						if strings.Contains(comps[1], "mongo") {
+							restoreMongo(containerID, tarReader)
+						} else if strings.Contains(comps[1], "dump") {
+							restoreMySQL(ctx, containerID, tarReader)
+						} else {
+							fmt.Println("Unrecognized db backup.")
+						}
+
+						continue
 					}
-					continue
 				}
 			}
 		}
@@ -118,35 +168,25 @@ func copyFile(dest string, source io.Reader, sourceInfo os.FileInfo) error {
 	return nil
 }
 
-func restoreMongo(dbBackup domain.DatabaseBackupConfig, tarReader *tar.Reader) {
-	cmd := domain.NewComposeCommand([]string{"ps", "-q", dbBackup.Container}, false) // false => isProd
-	containerID, err := cmd.GetResult()
-	if err != nil {
-		fmt.Println("Unable to get the 'db' container id")
+func restoreMongo(containerID string, mongoArchiveReader *tar.Reader) {
+	cmd := domain.NewCommand([]string{"docker", "exec", "-i", containerID, "mongorestore", "--archive", "--gzip"})
+	cmd.ExecuteWithStdin(mongoArchiveReader)
+}
+
+func restoreMySQL(ctx domain.ExecutionContext, containerID string, mysqlDumpReader *tar.Reader) {
+
+	containerConfig := utils.GetContainerConfig(containerID, ctx)
+
+	password := ""
+	if value, ok := containerConfig.Env["MYSQL_ROOT_PASSWORD"]; ok {
+		password = value
 	}
 
-	cmd = domain.NewCommand([]string{"docker", "exec", "-i", containerID, "mongorestore", "--archive", "--gzip"})
-	rawCmd := cmd.GetRawExecCommand()
-	rawCmd.Stderr = os.Stderr
-	rawCmd.Stdout = os.Stdout
-
-	stdinReader := bufio.NewReader(tarReader)
-	stdinWriter, err := rawCmd.StdinPipe()
-	if err != nil {
-		fmt.Println(err)
+	database := "db"
+	if value, ok := containerConfig.Env["MYSQL_DATABASE"]; ok {
+		database = value
 	}
 
-	_, err = stdinReader.WriteTo(stdinWriter)
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	fmt.Printf("Executing: %s\n", cmd)
-	rawCmd.Start()
-
-	// close writer to indicate that stdin is finished (avoiding hanging of the exec cmd)
-	stdinWriter.Close()
-
-	rawCmd.Wait()
-
+	cmd := domain.NewCommand([]string{"docker", "exec", "-i", containerID, "mysql", fmt.Sprintf("--password=%s", password), database})
+	cmd.ExecuteWithStdin(mysqlDumpReader)
 }

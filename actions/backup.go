@@ -1,7 +1,6 @@
 package actions
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -11,17 +10,11 @@ import (
 	"time"
 	"webup/pliz/config"
 	"webup/pliz/domain"
+	"webup/pliz/utils"
 
 	"github.com/Songmu/prompter"
 	"github.com/jhoonb/archivex"
 )
-
-type containerConfig struct {
-	Env   []string
-	Image string
-}
-
-type containerEnv map[string]string
 
 func BackupActionHandler(ctx domain.ExecutionContext) func() {
 	return func() {
@@ -105,31 +98,11 @@ func BackupActionHandler(ctx domain.ExecutionContext) func() {
 func makeDump(ctx domain.ExecutionContext, dbBackup domain.DatabaseBackupConfig, backupDir string) {
 
 	// fetch the container id for db
-	cmd := domain.NewComposeCommand([]string{"ps", "-q", dbBackup.Container}, ctx.IsProd())
-	containerId, err := cmd.GetResult()
-	if err != nil {
-		fmt.Println("Unable to get the 'db' container id")
-	}
-
-	fmt.Println(containerId)
+	containerID := utils.GetContainerID(dbBackup.Container, ctx)
+	fmt.Println(containerID)
 
 	// get the container config
-	cmd = domain.NewCommand([]string{"docker", "inspect", "--format", "{{json .Config}}", containerId})
-	configJson, err := cmd.GetResult()
-	if err != nil {
-		fmt.Println("Unable to get the config of the 'db' container")
-	}
-
-	// parse the json
-	var config containerConfig
-	json.NewDecoder(strings.NewReader(configJson)).Decode(&config)
-
-	// parse env variables of the container
-	env := containerEnv{}
-	for _, data := range config.Env {
-		items := strings.SplitN(data, "=", 2)
-		env[items[0]] = items[1]
-	}
+	config := utils.GetContainerConfig(containerID, ctx)
 
 	// get the type of DB to backup
 	// check from config or try to find it with the image name
@@ -144,13 +117,13 @@ func makeDump(ctx domain.ExecutionContext, dbBackup domain.DatabaseBackupConfig,
 
 	if dbType == "mysql" {
 		fmt.Println(path.Join(backupDir, "dump.sql"))
-		err := mysqlDump(path.Join(backupDir, "dump.sql"), containerId, env)
+		err := mysqlDump(path.Join(backupDir, "dump.sql"), containerID, config.Env)
 		if err != nil {
 			fmt.Println(err)
 		}
 	} else if dbType == "mongo" {
 		fmt.Println(path.Join(backupDir, "mongodb.archive"))
-		err := mongoDump(path.Join(backupDir, "mongodb.archive"), containerId, env)
+		err := mongoDump(path.Join(backupDir, "mongodb.archive"), containerID, config.Env)
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -160,7 +133,7 @@ func makeDump(ctx domain.ExecutionContext, dbBackup domain.DatabaseBackupConfig,
 
 }
 
-func mysqlDump(destination string, containerId string, env containerEnv) error {
+func mysqlDump(destination string, containerId string, env domain.DockerContainerEnv) error {
 
 	password := ""
 	if value, ok := env["MYSQL_ROOT_PASSWORD"]; ok {
@@ -191,7 +164,7 @@ func mysqlDump(destination string, containerId string, env containerEnv) error {
 	return nil
 }
 
-func mongoDump(destination string, containerId string, env containerEnv) error {
+func mongoDump(destination string, containerId string, env domain.DockerContainerEnv) error {
 
 	cmd := domain.NewCommand([]string{"docker", "exec", "-i", containerId, "mongodump", "--archive", "--gzip"})
 
