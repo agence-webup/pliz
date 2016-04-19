@@ -5,3 +5,4 @@ import:
 - package: github.com/Songmu/prompter
 - package: github.com/mattn/go-isatty
 - package: github.com/jhoonb/archivex
+- package: github.com/fatih/color

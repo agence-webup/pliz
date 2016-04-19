@@ -11,6 +11,7 @@ import (
 	"webup/pliz/utils"
 
 	"github.com/Songmu/prompter"
+	"github.com/fatih/color"
 	"github.com/jawher/mow.cli"
 )
 
@@ -76,7 +77,7 @@ func main() {
 			 * 1. Duplicate and edit the config files (.env, docker_ports.yml...)
 			 */
 
-			fmt.Printf("\n ▶ ️ Prepare config files...\n\n")
+			fmt.Printf("\n %s ️ Prepare config files...\n\n", color.YellowString("▶"))
 
 			for _, configFile := range config.ConfigFiles {
 				created := false
@@ -98,7 +99,7 @@ func main() {
 					cmd.Execute()
 				}
 
-				fmt.Println(configFile.Target + " OK.")
+				fmt.Println(configFile.Target + color.GreenString(" OK."))
 			}
 
 			fmt.Println("")
@@ -107,7 +108,7 @@ func main() {
 			 * 2. Build the containers
 			 */
 
-			fmt.Printf("\n ▶ ️ Build the containers...\n")
+			fmt.Printf("\n %s ️ Build the containers...\n", color.YellowString("▶"))
 
 			cmd := domain.NewComposeCommand([]string{"build"}, prod)
 			cmd.Execute()
@@ -118,7 +119,7 @@ func main() {
 			 * 3. Start the containers
 			 */
 
-			fmt.Printf("\n ▶ ️ Starting containers...\n")
+			fmt.Printf("\n %s ️ Starting containers...\n", color.YellowString("▶"))
 
 			// and start the containers
 			actions.StartActionHandler(prod)
@@ -129,13 +130,13 @@ func main() {
 			 * 4. Run the enabled tasks
 			 */
 
-			fmt.Printf("\n ▶ ️ Run install tasks...\n")
+			fmt.Printf("\n %s ️ Run install tasks...\n", color.YellowString("▶"))
 
 			for _, id := range config.InstallTasks {
 
 				task := config.Tasks[id]
 
-				fmt.Println("\n*** " + task.Name + " ***")
+				fmt.Printf("\n%s %s %s\n", color.CyanString("***"), task.Name, color.CyanString("***"))
 
 				// disable the execution check if the installation is forced
 				if *forced {
@@ -143,7 +144,7 @@ func main() {
 				}
 
 				if task.Execute(domain.TaskExecutionContext{Prod: prod}) {
-					fmt.Printf("Task '%s' executed.\n", task.Name)
+					fmt.Printf("Task '%s' %s.\n", task.Name, color.GreenString("executed"))
 				}
 			}
 
@@ -151,11 +152,11 @@ func main() {
 			 * 5. The end
 			 */
 
-			fmt.Println("\n\n ✓ You may now run 'pliz start' to launch your project")
+			fmt.Printf("\n\n %s You may now run '%s' to launch your project\n", color.GreenString("✓"), color.MagentaString("pliz start"))
 
 			if len(config.Checklist) > 0 {
 				for _, item := range config.Checklist {
-					fmt.Printf("  → %s\n", item)
+					fmt.Printf("  %s %s\n", color.RedString("→"), item)
 				}
 			}
 

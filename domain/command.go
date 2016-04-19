@@ -7,6 +7,8 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+
+	"github.com/fatih/color"
 )
 
 type CommandArgs []string
@@ -26,7 +28,7 @@ func (c Command) Execute() {
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
 
-	fmt.Printf("Executing: %s\n", c)
+	fmt.Printf("%s %s\n", color.MagentaString("Executing:"), c)
 
 	cmd.Run()
 }
@@ -51,7 +53,7 @@ func (c Command) ExecuteWithStdin(reader io.Reader) {
 		fmt.Println(err)
 	}
 
-	fmt.Printf("Executing: %s\n", c)
+	fmt.Printf("%s %s\n", color.MagentaString("Executing:"), c)
 	cmd.Start()
 
 	// close writer to indicate that stdin is finished (avoiding hanging of the exec cmd)

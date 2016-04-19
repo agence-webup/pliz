@@ -1,6 +1,8 @@
-hash: 007d069d7505c85809fac9672483fbdb4f9b261273e7a602c49a38ab0196f8d3
-updated: 2016-03-24T01:50:42.911897447+01:00
+hash: d34eb7f737cd99e3f3e5b376aecddc9cb7a15001b0ed2f287f68f0e561f9fa0b
+updated: 2016-04-19T22:14:48.003008445+02:00
 imports:
+- name: github.com/fatih/color
+  version: 533cd7fd8a85905f67a1753afb4deddc85ea174f
 - name: github.com/jawher/mow.cli
   version: 772320464101e904cd51198160eb4d489be9cc49
 - name: github.com/jhoonb/archivex
@@ -10,11 +12,11 @@ imports:
 - name: github.com/Songmu/prompter
   version: f49666b0047d12850875d771340e1d862d9e7a0c
 - name: golang.org/x/crypto
-  version: c197bcf24cde29d3f73c7b4ac6fd41f4384e8af6
+  version: 2f6fccd33b9b1fc23ebb73ad4890698820f7174d
   subpackages:
   - ssh/terminal
 - name: golang.org/x/sys
-  version: afce3de5756ca82699128ebae46ac95ad59d6297
+  version: f64b50fbea64174967a8882830d621a18ee1548e
   subpackages:
   - unix
 - name: gopkg.in/yaml.v2

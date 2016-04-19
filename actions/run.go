@@ -3,6 +3,8 @@ package actions
 import (
 	"fmt"
 	"webup/pliz/domain"
+
+	"github.com/fatih/color"
 )
 
 func RunTaskActionHandler(task domain.Task, prod bool) func() {
@@ -12,7 +14,7 @@ func RunTaskActionHandler(task domain.Task, prod bool) func() {
 		task.ExecutionCheck = nil
 
 		if task.Execute(domain.TaskExecutionContext{Prod: prod}) {
-			fmt.Printf("Task '%s' executed.\n", task.Name)
+			fmt.Printf("Task '%s' %s.\n", task.Name, color.GreenString("executed"))
 		}
 	}
 }
