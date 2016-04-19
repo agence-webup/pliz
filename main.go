@@ -43,8 +43,7 @@ func main() {
 
 	app.Command("start", "Start (or restart) the project", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
-			cmd := domain.NewComposeCommand([]string{"up", "-d", config.Get().Containers.Proxy}, prod)
-			cmd.Execute()
+			actions.StartActionHandler(prod)
 		}
 	})
 
@@ -116,7 +115,18 @@ func main() {
 			fmt.Println("")
 
 			/*
-			 * 3. Run the enabled tasks
+			 * 3. Start the containers
+			 */
+
+			fmt.Printf("\n ▶ ️ Starting containers...\n")
+
+			// and start the containers
+			actions.StartActionHandler(prod)
+
+			fmt.Println("")
+
+			/*
+			 * 4. Run the enabled tasks
 			 */
 
 			fmt.Printf("\n ▶ ️ Run install tasks...\n")
@@ -138,7 +148,7 @@ func main() {
 			}
 
 			/*
-			 * 4. The end
+			 * 5. The end
 			 */
 
 			fmt.Println("\n\n ✓ You may now run 'pliz start' to launch your project")
