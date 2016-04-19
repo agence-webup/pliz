@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"sort"
+
 	"webup/pliz/actions"
 	"webup/pliz/config"
 	"webup/pliz/domain"
@@ -17,7 +18,7 @@ func main() {
 
 	app := cli.App("pliz", "Manage projects building")
 
-	app.Version("v version", "Pliz 2 (build 6)")
+	app.Version("v version", "Pliz 3 dev (build 7)")
 
 	// option to change the Pliz env
 	plizEnv := app.String(cli.StringOpt{
@@ -26,6 +27,7 @@ func main() {
 		Desc:  "Change the environnment of Pliz (i.e. 'prod'). The environment var 'PLIZ_ENV' can be use too.",
 	})
 	prod := false
+	var executionContext domain.ExecutionContext
 
 	app.Before = func() {
 		// Parse and check config
@@ -35,6 +37,8 @@ func main() {
 		if *plizEnv == "prod" || os.Getenv("PLIZ_ENV") == "prod" {
 			prod = true
 		}
+
+		executionContext = domain.ExecutionContext{Env: *plizEnv}
 	}
 
 	app.Command("start", "Start (or restart) the project", func(cmd *cli.Cmd) {
@@ -211,6 +215,20 @@ func main() {
 			cmd.Command(id, task.Description, func(cmd *cli.Cmd) {
 				cmd.Action = actions.RunTaskActionHandler(task, prod)
 			})
+		}
+	})
+
+	app.Command("backup", "Perform a backup of the project", func(cmd *cli.Cmd) {
+		cmd.Action = actions.BackupActionHandler(executionContext)
+	})
+
+	app.Command("restore", "Restore a backup (Warning: files will be overrided)", func(cmd *cli.Cmd) {
+
+		cmd.Spec = "FILE"
+		file := cmd.StringArg("FILE", "", "A pliz backup file (tar.gz)")
+
+		cmd.Action = func() {
+			actions.RestoreActionHandler(executionContext, *file)
 		}
 	})
 

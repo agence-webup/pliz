@@ -1,7 +1,9 @@
 package domain
 
 import (
+	"bufio"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"strings"
@@ -27,6 +29,63 @@ func (c Command) Execute() {
 	fmt.Printf("Executing: %s\n", c)
 
 	cmd.Run()
+}
+
+func (c Command) GetRawExecCommand() *exec.Cmd {
+	return exec.Command(c.Name, c.Args...)
+}
+
+func (c Command) ExecuteWithStdin(reader io.Reader) {
+	cmd := exec.Command(c.Name, c.Args...)
+	cmd.Stderr = os.Stderr
+	cmd.Stdout = os.Stdout
+
+	stdinReader := bufio.NewReader(reader)
+	stdinWriter, err := cmd.StdinPipe()
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	_, err = stdinReader.WriteTo(stdinWriter)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	fmt.Printf("Executing: %s\n", c)
+	cmd.Start()
+
+	// close writer to indicate that stdin is finished (avoiding hanging of the exec cmd)
+	stdinWriter.Close()
+
+	cmd.Wait()
+}
+
+func (c Command) GetResult() (string, error) {
+	cmd := exec.Command(c.Name, c.Args...)
+
+	out, err := cmd.Output()
+	if err != nil {
+		return "", err
+	}
+
+	output := strings.TrimSpace(string(out))
+
+	return output, nil
+}
+
+func (c Command) WriteResultToFile(file *os.File) error {
+	cmd := exec.Command(c.Name, c.Args...)
+
+	cmd.Stdout = file
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+	fmt.Printf("Executing: %s\n", c)
+	fmt.Printf("Writing to file: %s\n", file.Name())
+
+	return nil
 }
 
 func NewCommand(list []string) Command {

@@ -57,3 +57,14 @@ watch:
 checklist:
   - Check if your .env is correctly configured
   - Don't forget to run 'pliz bash app; php artisan key:generate' if needed
+
+backup:
+  # list of the files or directories to backup
+  files:
+    - storage/app
+    - database.sqlite
+  # list of the compose DB services to backup
+  # supported DB: MySQL or MongoDB
+  databases:
+    - container: db
+      type: mongo # mysql|mongo, optional. If not present, the image name is used to try to guess the type

@@ -44,6 +44,7 @@ type parserConfig struct {
 	Tasks        []TaskSpec        `yaml:"tasks"`
 	InstallTasks []domain.TaskID   `yaml:"install_tasks"`
 	Checklist    []string          `yaml:"checklist"`
+	Backup       BackupSpec        `yaml:"backup"`
 }
 
 func (parsed parserConfig) convertToConfig(config *domain.Config) error {
@@ -145,6 +146,14 @@ func (parsed parserConfig) convertToConfig(config *domain.Config) error {
 
 	// checklist
 	config.Checklist = parsed.Checklist
+
+	// backup
+	backupConfig := domain.Backup{Files: parsed.Backup.Files, Databases: []domain.DatabaseBackupConfig{}}
+	for i := range parsed.Backup.Databases {
+		dbBackupConfig := domain.DatabaseBackupConfig{Container: parsed.Backup.Databases[i].Container, Type: parsed.Backup.Databases[i].Type}
+		backupConfig.Databases = append(backupConfig.Databases, dbBackupConfig)
+	}
+	config.BackupConfig = backupConfig
 
 	return nil
 }

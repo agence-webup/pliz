@@ -7,7 +7,8 @@ type Config struct {
 	Checklist   []string
 
 	InstallTasks []TaskID // list of tasks that will be executed during install
-	// CustomTasks []Task
+
+	BackupConfig Backup
 }
 
 type ConfigFile struct {
@@ -24,4 +25,14 @@ type ContainerConfig struct {
 
 func (c ContainerConfig) All() []string {
 	return []string{c.Proxy, c.App, c.Builder, c.Db}
+}
+
+type Backup struct {
+	Files     []string
+	Databases []DatabaseBackupConfig
+}
+
+type DatabaseBackupConfig struct {
+	Container string
+	Type      string
 }
