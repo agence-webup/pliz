@@ -45,3 +45,24 @@ func GetContainerConfig(containerID string, ctx domain.ExecutionContext) domain.
 		Env:   env,
 	}
 }
+
+func GetExposedPorts(containerID string, ctx domain.ExecutionContext) []string {
+	cmd := domain.NewCommand([]string{"docker", "inspect", "--format", "{{json .NetworkSettings.Ports}}", containerID})
+	configJson, err := cmd.GetResult()
+	if err != nil {
+		fmt.Println("Unable to get the network settings of the container")
+	}
+
+	// parse the json
+	var networkSettings map[string][]map[string]string
+	json.NewDecoder(strings.NewReader(configJson)).Decode(&networkSettings)
+
+	ports := []string{}
+	for _, portSettings := range networkSettings {
+		for _, settings := range portSettings {
+			ports = append(ports, settings["HostPort"])
+		}
+	}
+
+	return ports
+}

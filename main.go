@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"regexp"
 	"sort"
 
 	"webup/pliz/actions"
@@ -45,6 +46,24 @@ func main() {
 	app.Command("start", "Start (or restart) the project", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
 			actions.StartActionHandler(prod)
+
+			// display access infos
+			containerID := utils.GetContainerID(config.Get().Containers.Proxy, executionContext)
+			ports := utils.GetExposedPorts(containerID, executionContext)
+
+			if len(ports) > 0 {
+				// get ip from DOCKER_HOST env variable
+				rgexp := regexp.MustCompile("(\\d{1,3}(?:\\.\\d{1,3}){3})")
+				ip := rgexp.FindString(os.Getenv("DOCKER_HOST"))
+
+				fmt.Printf("\nYour app is accessible using:\n")
+				for _, port := range ports {
+					color.Green("   http://%s:%s", ip, port)
+				}
+			} else {
+				fmt.Printf("\n%s: The proxy doesn't seem to be exposed. Check your ports settings.\n", color.YellowString("Warning"))
+			}
+
 		}
 	})
 
