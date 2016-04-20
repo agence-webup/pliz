@@ -84,7 +84,10 @@ func main() {
 
 			if prod {
 				backup := prompter.YN("You're in production. Do you want to make a backup?", true)
-				fmt.Println("Backup:", backup)
+				if backup {
+					actions.BackupActionHandler(executionContext)()
+					fmt.Println("")
+				}
 
 				ok := prompter.YN("The installation is going to start. Are you sure you want to continue?", false)
 				if !ok {
@@ -171,7 +174,7 @@ func main() {
 			 * 5. The end
 			 */
 
-			fmt.Printf("\n\n %s You may now run '%s' to launch your project\n", color.GreenString("✓"), color.MagentaString("pliz start"))
+			fmt.Printf("\n\n%s You may now run '%s' to launch your project\n", color.GreenString("✓"), color.MagentaString("pliz start"))
 
 			if len(config.Checklist) > 0 {
 				for _, item := range config.Checklist {
