@@ -1,5 +1,12 @@
-# rev 2-dev
+# rev 3
 WIP
+
+- Improve UX using some colors and some informations like the accessible URL of the proxy
+- Start the containers just after the build step during a `pliz install`, fixing issue with db-update which cannot be executed.
+- Add `pliz backup` and `pliz restore` to manage backup: gzip archive containing config files, list of specified files and DB dumps
+
+# rev 2
+4/5/2016
 
 - __BREAKING CHANGE__: Refactoring of the config file
     - allow to override default tasks even if they are not in `enabled_tasks`
