@@ -31,32 +31,12 @@ tasks:
       - nom="Bruno";
         if [ $nom = "Bruno" ];
         then
-          echo "Salut Bruno !";
+          echo "Hello Bruno!";
         fi;
-
-
-enabled_tasks:
-  - name: npm
-    config:
-      container: srcbuild # can be 'none' to run the command on the host
-      command: ["echo", "as you arrrrre!"]
-  - name: bower
-    version: 2 # not used currently
-  - name: composer
-  # - name: gulp
-  # - name: db-update
-  - name: key_generate
-
-watch:
-  container: none
-  command:
-    - tail
-    - -f
-    - pliz.example.yml
 
 checklist:
   - Check if your .env is correctly configured
-  - Don't forget to run 'pliz bash app; php artisan key:generate' if needed
+  - Don't forget to execute 'pliz run key_generate' if needed
 
 backup:
   # list of the files or directories to backup
