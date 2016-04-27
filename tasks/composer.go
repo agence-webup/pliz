@@ -7,7 +7,7 @@ func ComposerTask(container string) domain.Task {
 	task := domain.Task{Name: "composer", Description: "Run 'composer install' in the app container"}
 
 	// check if 'composer.json' has been updated since last install into 'vendor'
-	task.ExecutionCheck = &domain.ModificationDateTaskExecutionCheck{UpdatedFile: "composer.json", CompareTo: "vendor"}
+	task.ExecutionCheck = &domain.ModificationDateTaskExecutionCheck{UpdatedFile: "composer.lock", CompareTo: "vendor"}
 
 	// execute 'composer install' into the builder container
 	task.Container = &container
