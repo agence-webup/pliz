@@ -7,6 +7,9 @@ containers:
   # proxy: proxy
   # db: db
 
+# optional. Set the container that will be started with pliz start
+# startup_container: proxy
+
 config_files:
   .env.sample: .env
   docker_ports.sample.yml: docker_ports.yml

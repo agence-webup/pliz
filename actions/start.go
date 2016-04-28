@@ -6,6 +6,6 @@ import (
 )
 
 func StartActionHandler(prod bool) {
-	cmd := domain.NewComposeCommand([]string{"up", "-d", config.Get().Containers.Proxy}, prod)
+	cmd := domain.NewComposeCommand([]string{"up", "-d", config.Get().StartupContainer}, prod)
 	cmd.Execute()
 }
