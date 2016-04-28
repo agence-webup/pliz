@@ -1,6 +1,7 @@
 # rev 3
 WIP
 
+- Add a new config entry `additional_startup_containers` to start some containers with `pliz start`
 - Add a new config entry `startup_container`. Allows to override the container used by `pliz start` to launch project
 - Add some options to `pliz backup` to use the command in scripts (disable prompt)
 - Improve UX using some colors and some informations like the accessible URL of the proxy
