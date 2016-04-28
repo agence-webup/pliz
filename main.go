@@ -85,7 +85,7 @@ func main() {
 			if prod {
 				backup := prompter.YN("You're in production. Do you want to make a backup?", true)
 				if backup {
-					actions.BackupActionHandler(executionContext)()
+					actions.BackupActionHandler(executionContext, nil, nil, nil)
 					fmt.Println("")
 				}
 
@@ -252,7 +252,23 @@ func main() {
 	})
 
 	app.Command("backup", "Perform a backup of the project", func(cmd *cli.Cmd) {
-		cmd.Action = actions.BackupActionHandler(executionContext)
+
+		cmd.Spec = "[-q [--files] [--db]] [-o]"
+
+		quiet := cmd.BoolOpt("q quiet", false, "Avoid prompt")
+		backupFiles := cmd.BoolOpt("files", false, "Indicates if files will be backup")
+		backupDB := cmd.BoolOpt("db", false, "Indicates if DB will be backup")
+
+		outputFilename := cmd.StringOpt("o output", "", "Set the filename of the tar.gz")
+
+		cmd.Action = func() {
+			if *quiet == false {
+				backupFiles = nil
+				backupDB = nil
+			}
+
+			actions.BackupActionHandler(executionContext, backupFiles, backupDB, outputFilename)
+		}
 	})
 
 	app.Command("restore", "Restore a backup (Warning: files will be overrided)", func(cmd *cli.Cmd) {
