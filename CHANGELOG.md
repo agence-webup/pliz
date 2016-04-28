@@ -1,6 +1,8 @@
 # rev 3
 WIP
 
+- Add a new config entry `startup_container`. Allows to override the container used by `pliz start` to launch project
+- Add some options to `pliz backup` to use the command in scripts (disable prompt)
 - Improve UX using some colors and some informations like the accessible URL of the proxy
 - Start the containers just after the build step during a `pliz install`, fixing issue with db-update which cannot be executed.
 - Add `pliz backup` and `pliz restore` to manage backup: gzip archive containing config files, list of specified files and DB dumps
