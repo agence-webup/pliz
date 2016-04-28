@@ -5,7 +5,14 @@ import (
 	"webup/pliz/domain"
 )
 
-func StartActionHandler(prod bool) {
-	cmd := domain.NewComposeCommand([]string{"up", "-d", config.Get().StartupContainer}, prod)
+func StartActionHandler(prod bool, startAdditionalContainers bool) {
+
+	args := []string{"up", "-d", config.Get().StartupContainer}
+
+	if startAdditionalContainers {
+		args = append(args, config.Get().AdditionalStartupContainers...)
+	}
+
+	cmd := domain.NewComposeCommand(args, prod)
 	cmd.Execute()
 }

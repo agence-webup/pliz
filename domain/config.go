@@ -1,11 +1,12 @@
 package domain
 
 type Config struct {
-	StartupContainer string
-	Containers       ContainerConfig
-	ConfigFiles      []ConfigFile
-	Tasks            map[TaskID]Task
-	Checklist        []string
+	StartupContainer            string
+	AdditionalStartupContainers []string
+	Containers                  ContainerConfig
+	ConfigFiles                 []ConfigFile
+	Tasks                       map[TaskID]Task
+	Checklist                   []string
 
 	InstallTasks []TaskID // list of tasks that will be executed during install
 

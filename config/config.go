@@ -39,13 +39,14 @@ func Get() domain.Config {
 }
 
 type parserConfig struct {
-	StartupContainer string            `yaml:"startup_container"`
-	Containers       map[string]string `yaml:"containers"`
-	ConfigFiles      map[string]string `yaml:"config_files"`
-	Tasks            []TaskSpec        `yaml:"tasks"`
-	InstallTasks     []domain.TaskID   `yaml:"install_tasks"`
-	Checklist        []string          `yaml:"checklist"`
-	Backup           BackupSpec        `yaml:"backup"`
+	StartupContainer            string            `yaml:"startup_container"`
+	AdditionalStartupContainers []string          `yaml:"additional_startup_containers"`
+	Containers                  map[string]string `yaml:"containers"`
+	ConfigFiles                 map[string]string `yaml:"config_files"`
+	Tasks                       []TaskSpec        `yaml:"tasks"`
+	InstallTasks                []domain.TaskID   `yaml:"install_tasks"`
+	Checklist                   []string          `yaml:"checklist"`
+	Backup                      BackupSpec        `yaml:"backup"`
 }
 
 func (parsed parserConfig) convertToConfig(config *domain.Config) error {
@@ -72,6 +73,9 @@ func (parsed parserConfig) convertToConfig(config *domain.Config) error {
 	if parsed.StartupContainer != "" {
 		config.StartupContainer = parsed.StartupContainer
 	}
+
+	// additional startup containers
+	config.AdditionalStartupContainers = parsed.AdditionalStartupContainers
 
 	// config files
 	configFiles := []domain.ConfigFile{}

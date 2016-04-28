@@ -45,7 +45,7 @@ func main() {
 
 	app.Command("start", "Start (or restart) the project", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
-			actions.StartActionHandler(prod)
+			actions.StartActionHandler(prod, true)
 
 			// display access infos
 			containerID := utils.GetContainerID(config.Get().StartupContainer, executionContext)
@@ -144,7 +144,7 @@ func main() {
 			fmt.Printf("\n %s ️ Starting containers...\n", color.YellowString("▶"))
 
 			// and start the containers
-			actions.StartActionHandler(prod)
+			actions.StartActionHandler(prod, false)
 
 			fmt.Println("")
 
