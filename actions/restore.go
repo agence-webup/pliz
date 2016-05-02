@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/Songmu/prompter"
+	"github.com/fatih/color"
 
 	"webup/pliz/config"
 	"webup/pliz/domain"
@@ -31,41 +32,35 @@ func RestoreActionHandler(ctx domain.ExecutionContext, file string) {
 		fmt.Println(err)
 	}
 
-	fmt.Println("\n ✓ Done")
-}
-
-func ungzipReader(source string) (*gzip.Reader, error) {
-	reader, err := os.Open(source)
-	if err != nil {
-		return nil, err
-	}
-	defer reader.Close()
-
-	archive, err := gzip.NewReader(reader)
-	if err != nil {
-		return nil, err
-	}
-
-	return archive, nil
+	fmt.Printf("\n %s Done\n", color.GreenString("✓"))
 }
 
 func untar(ctx domain.ExecutionContext, tarball string) error {
 
 	// choices
-	fmt.Println(" ▶ ️ Choose what you want to restore:")
+	fmt.Printf(" %s ️ Choose what you want to restore:\n", color.YellowString("▶"))
 	configFilesRestoration := prompter.YN("     - configuration files", true)
 	filesRestoration := prompter.YN("     - others files", true)
 	dbRestoration := prompter.YN("     - database dumps", true)
 
 	fmt.Printf("\n\n")
 
-	reader, err := ungzipReader(tarball)
+	// open the tarball
+	reader, err := os.Open(tarball)
 	if err != nil {
 		return err
 	}
 	defer reader.Close()
 
-	tarReader := tar.NewReader(reader)
+	// gunzip
+	gzipReader, err := gzip.NewReader(reader)
+	if err != nil {
+		return err
+	}
+	defer gzipReader.Close()
+
+	// read the tarball
+	tarReader := tar.NewReader(gzipReader)
 
 	for {
 		header, err := tarReader.Next()
@@ -133,7 +128,6 @@ func untar(ctx domain.ExecutionContext, tarball string) error {
 							fmt.Println("Unrecognized db backup.")
 						}
 
-						continue
 					}
 				}
 			}

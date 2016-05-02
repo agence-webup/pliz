@@ -1,7 +1,6 @@
 package domain
 
 import (
-	"bufio"
 	"fmt"
 	"io"
 	"os"
@@ -41,25 +40,11 @@ func (c Command) ExecuteWithStdin(reader io.Reader) {
 	cmd := exec.Command(c.Name, c.Args...)
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
-
-	stdinReader := bufio.NewReader(reader)
-	stdinWriter, err := cmd.StdinPipe()
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	_, err = stdinReader.WriteTo(stdinWriter)
-	if err != nil {
-		fmt.Println(err)
-	}
+	cmd.Stdin = reader
 
 	fmt.Printf("%s %s\n", color.MagentaString("Executing:"), c)
-	cmd.Start()
 
-	// close writer to indicate that stdin is finished (avoiding hanging of the exec cmd)
-	stdinWriter.Close()
-
-	cmd.Wait()
+	cmd.Run()
 }
 
 func (c Command) GetResult() (string, error) {
