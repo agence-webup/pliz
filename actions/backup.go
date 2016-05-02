@@ -112,10 +112,16 @@ func BackupActionHandler(ctx domain.ExecutionContext, backupFilesOpt *bool, back
 func makeDump(ctx domain.ExecutionContext, dbBackup domain.DatabaseBackupConfig, backupDir string) {
 
 	// fetch the container id for db
-	containerID := utils.GetContainerID(dbBackup.Container, ctx)
+	containerID, err := utils.GetContainerID(dbBackup.Container, ctx)
+	if err != nil {
+		return
+	}
 
 	// get the container config
-	config := utils.GetContainerConfig(containerID, ctx)
+	config, err := utils.GetContainerConfig(containerID, ctx)
+	if err != nil {
+		return
+	}
 
 	// get the type of DB to backup
 	// check from config or try to find it with the image name

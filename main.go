@@ -48,7 +48,7 @@ func main() {
 			actions.StartActionHandler(prod, true)
 
 			// display access infos
-			containerID := utils.GetContainerID(config.Get().StartupContainer, executionContext)
+			containerID, _ := utils.GetContainerID(config.Get().StartupContainer, executionContext)
 			ports := utils.GetExposedPorts(containerID, executionContext)
 
 			if len(ports) > 0 {

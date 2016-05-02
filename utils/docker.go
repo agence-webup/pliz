@@ -12,17 +12,17 @@ type containerParsedConfig struct {
 	Image string
 }
 
-func GetContainerID(container string, ctx domain.ExecutionContext) string {
+func GetContainerID(container string, ctx domain.ExecutionContext) (string, error) {
 	cmd := domain.NewComposeCommand([]string{"ps", "-q", container}, ctx.IsProd())
 	containerID, err := cmd.GetResult()
 	if err != nil {
 		fmt.Println("Unable to get the 'db' container id")
 	}
 
-	return containerID
+	return containerID, err
 }
 
-func GetContainerConfig(containerID string, ctx domain.ExecutionContext) domain.DockerContainerConfig {
+func GetContainerConfig(containerID string, ctx domain.ExecutionContext) (domain.DockerContainerConfig, error) {
 	cmd := domain.NewCommand([]string{"docker", "inspect", "--format", "{{json .Config}}", containerID})
 	configJson, err := cmd.GetResult()
 	if err != nil {
@@ -43,7 +43,7 @@ func GetContainerConfig(containerID string, ctx domain.ExecutionContext) domain.
 	return domain.DockerContainerConfig{
 		Image: config.Image,
 		Env:   env,
-	}
+	}, err
 }
 
 func GetExposedPorts(containerID string, ctx domain.ExecutionContext) []string {

@@ -119,10 +119,10 @@ func untar(ctx domain.ExecutionContext, tarball string) error {
 						fmt.Printf("\n → Restoring %s\n", dbBackup.Container)
 
 						// get container id
-						cmd := domain.NewComposeCommand([]string{"ps", "-q", dbBackup.Container}, ctx.IsProd())
-						containerID, err := cmd.GetResult()
+						containerID, err := utils.GetContainerID(dbBackup.Container, ctx)
 						if err != nil {
 							fmt.Println("Unable to get the 'db' container id")
+							continue
 						}
 
 						if strings.Contains(comps[1], "mongo") {
@@ -175,7 +175,10 @@ func restoreMongo(containerID string, mongoArchiveReader *tar.Reader) {
 
 func restoreMySQL(ctx domain.ExecutionContext, containerID string, mysqlDumpReader *tar.Reader) {
 
-	containerConfig := utils.GetContainerConfig(containerID, ctx)
+	containerConfig, err := utils.GetContainerConfig(containerID, ctx)
+	if err != nil {
+		return
+	}
 
 	password := ""
 	if value, ok := containerConfig.Env["MYSQL_ROOT_PASSWORD"]; ok {
