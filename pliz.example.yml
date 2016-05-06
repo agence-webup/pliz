@@ -24,13 +24,13 @@ install_tasks:
   - npm
   - bower
   - composer
-  - key_generate
+  - key:generate
 
 tasks:
   - name: npm
     container: srcbuild # can be 'none' to run the command on the host
     command: ["echo", "as you arrrrre!"]
-  - name: key_generate
+  - name: key:generate
     description: Generate the key used the encrypt cookies
     container: none
     command:

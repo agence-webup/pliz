@@ -21,7 +21,7 @@ func DefaultTaskNames() []TaskID {
 		"bower",
 		"composer",
 		"gulp",
-		"db-update",
+		"db:update",
 	}
 }
 

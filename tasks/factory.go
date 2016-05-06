@@ -17,7 +17,7 @@ func CreateTaskWithName(name domain.TaskID, config domain.Config) (domain.Task, 
 		return ComposerTask(config.Containers.App), nil
 	case "gulp":
 		return GulpTask(config.Containers.Builder), nil
-	case "db-update":
+	case "db:update":
 		return DbUpdateTask(config.Containers.App), nil
 	}
 
