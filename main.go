@@ -55,6 +55,9 @@ func main() {
 				// get ip from DOCKER_HOST env variable
 				rgexp := regexp.MustCompile("(\\d{1,3}(?:\\.\\d{1,3}){3})")
 				ip := rgexp.FindString(os.Getenv("DOCKER_HOST"))
+				if ip == "" {
+					ip = "localhost"
+				}
 
 				fmt.Printf("\nYour app is accessible using:\n")
 				for _, port := range ports {
