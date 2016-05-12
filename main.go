@@ -20,7 +20,7 @@ func main() {
 
 	app := cli.App("pliz", "Manage projects building")
 
-	app.Version("v version", "Pliz 3 dev (build 11 WIP)")
+	app.Version("v version", "Pliz 3 (build 12)")
 
 	// option to change the Pliz env
 	plizEnv := app.String(cli.StringOpt{
