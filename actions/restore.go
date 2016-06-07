@@ -39,9 +39,9 @@ func untar(ctx domain.ExecutionContext, tarball string) error {
 
 	// choices
 	fmt.Printf(" %s ️ Choose what you want to restore:\n", color.YellowString("▶"))
-	configFilesRestoration := prompter.YN("     - configuration files", true)
-	filesRestoration := prompter.YN("     - others files", true)
-	dbRestoration := prompter.YN("     - database dumps", true)
+	configFilesRestoration := prompter.YN("     - configuration files", false)
+	filesRestoration := prompter.YN("     - others files", false)
+	dbRestoration := prompter.YN("     - database dumps", false)
 
 	fmt.Printf("\n\n")
 
