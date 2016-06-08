@@ -47,26 +47,27 @@ func main() {
 		cmd.Action = func() {
 			actions.StartActionHandler(prod, true)
 
-			// display access infos
-			containerID, _ := utils.GetContainerID(config.Get().StartupContainer, executionContext)
-			ports := utils.GetExposedPorts(containerID, executionContext)
+			if !prod {
+				// display access infos
+				containerID, _ := utils.GetContainerID(config.Get().StartupContainer, executionContext)
+				ports := utils.GetExposedPorts(containerID, executionContext)
 
-			if len(ports) > 0 {
-				// get ip from DOCKER_HOST env variable
-				rgexp := regexp.MustCompile("(\\d{1,3}(?:\\.\\d{1,3}){3})")
-				ip := rgexp.FindString(os.Getenv("DOCKER_HOST"))
-				if ip == "" {
-					ip = "localhost"
-				}
+				if len(ports) > 0 {
+					// get ip from DOCKER_HOST env variable
+					rgexp := regexp.MustCompile("(\\d{1,3}(?:\\.\\d{1,3}){3})")
+					ip := rgexp.FindString(os.Getenv("DOCKER_HOST"))
+					if ip == "" {
+						ip = "localhost"
+					}
 
-				fmt.Printf("\nYour app is accessible using:\n")
-				for _, port := range ports {
-					color.Green("   http://%s:%s", ip, port)
+					fmt.Printf("\nYour app is accessible using:\n")
+					for _, port := range ports {
+						color.Green("   http://%s:%s", ip, port)
+					}
+				} else {
+					fmt.Printf("\n%s: The proxy doesn't seem to be exposed. Check your ports settings.\n", color.YellowString("Warning"))
 				}
-			} else {
-				fmt.Printf("\n%s: The proxy doesn't seem to be exposed. Check your ports settings.\n", color.YellowString("Warning"))
 			}
-
 		}
 	})
 
