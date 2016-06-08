@@ -1,5 +1,11 @@
-# rev 3
+# rev 4
 WIP
+
+- Don't display access url after `pliz start` for production environment
+- Fix #3: `pliz restore` prompts to `false` by default
+
+# rev 3
+5/12/2016
 
 - Rename the task `db-update` to `db:update`. Every custom task should respect this convention.
 - Add a new config entry `additional_startup_containers` to start some containers with `pliz start`
