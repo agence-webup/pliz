@@ -17,7 +17,7 @@ import (
 	"github.com/jhoonb/archivex"
 )
 
-func BackupActionHandler(ctx domain.ExecutionContext, backupFilesOpt *bool, backupDBOpt *bool, outputOpt *string) {
+func BackupActionHandler(ctx domain.ExecutionContext, backupFilesOpt *bool, backupDBOpt *bool, outputOpt *string) error {
 
 	backupFiles := false
 	if backupFilesOpt == nil && len(config.Get().BackupConfig.Files) > 0 {
@@ -39,8 +39,7 @@ func BackupActionHandler(ctx domain.ExecutionContext, backupFilesOpt *bool, back
 	backupDir := ".pliz_backup"
 	err := os.Mkdir(backupDir, os.ModePerm)
 	if err != nil {
-		fmt.Printf("Unable to create a backup directory: %s\n", err)
-		return
+		return fmt.Errorf("Unable to create a backup directory: %s\n", err)
 	}
 
 	// config files backup
@@ -53,7 +52,7 @@ func BackupActionHandler(ctx domain.ExecutionContext, backupFilesOpt *bool, back
 				os.MkdirAll(filepath.Dir(target), os.ModePerm)
 				os.Link(configFile.Target, target)
 			} else {
-				fmt.Println(err)
+				return fmt.Errorf("Unable to backup a config file: %s\n", err)
 			}
 		}
 	}
@@ -64,10 +63,12 @@ func BackupActionHandler(ctx domain.ExecutionContext, backupFilesOpt *bool, back
 			dir := path.Join(backupDir, "backup", "databases", dbBackup.Container)
 			err := os.MkdirAll(dir, 0755)
 			if err != nil {
-				fmt.Println(err)
-				return
+				return fmt.Errorf("Unable to create the db backup directory: %s\n", err)
 			}
-			makeDump(ctx, dbBackup, dir)
+			err = makeDump(ctx, dbBackup, dir)
+			if err != nil {
+				return fmt.Errorf("Unable to backup databases: %s\n", err)
+			}
 		}
 	}
 
@@ -94,7 +95,7 @@ func BackupActionHandler(ctx domain.ExecutionContext, backupFilesOpt *bool, back
 		for _, file := range config.Get().BackupConfig.Files {
 			err := filepath.Walk(file, walkFunc)
 			if err != nil {
-				fmt.Printf("Unable to walk into %s\n%s\n", file, err)
+				return fmt.Errorf("WARN: Unable to walk into %s\n%s\n", file, err)
 			}
 		}
 	}
@@ -117,30 +118,31 @@ func BackupActionHandler(ctx domain.ExecutionContext, backupFilesOpt *bool, back
 
 	err = os.Rename(path.Join(backupDir, "backup_archive.tar.gz"), archiveFilename)
 	if err != nil {
-		fmt.Println(err)
+		return fmt.Errorf("Unable to create the backup file: %s\n", err)
 	}
 
 	// clean tmp
 	err = os.RemoveAll(backupDir)
 	if err != nil {
-		fmt.Println(err)
+		return fmt.Errorf("Unable to remove temp folder: %s\n", err)
 	}
 
 	fmt.Printf("\n %s Done\n", color.GreenString("✓"))
+	return nil
 }
 
-func makeDump(ctx domain.ExecutionContext, dbBackup domain.DatabaseBackupConfig, backupDir string) {
+func makeDump(ctx domain.ExecutionContext, dbBackup domain.DatabaseBackupConfig, backupDir string) error {
 
 	// fetch the container id for db
 	containerID, err := utils.GetContainerID(dbBackup.Container, ctx)
 	if err != nil {
-		return
+		return err
 	}
 
 	// get the container config
 	config, err := utils.GetContainerConfig(containerID, ctx)
 	if err != nil {
-		return
+		return err
 	}
 
 	// get the type of DB to backup
@@ -156,18 +158,13 @@ func makeDump(ctx domain.ExecutionContext, dbBackup domain.DatabaseBackupConfig,
 
 	if dbType == "mysql" {
 		err := mysqlDump(path.Join(backupDir, "dump.sql"), containerID, config.Env, backupDir)
-		if err != nil {
-			fmt.Println(err)
-		}
+		return err
 	} else if dbType == "mongo" {
 		err := mongoDump(path.Join(backupDir, "mongodb.archive"), containerID, config.Env, backupDir)
-		if err != nil {
-			fmt.Println(err)
-		}
+		return err
 	} else {
-		fmt.Println("\nError: unsupported database (only MySQL or MongoDB)")
+		return fmt.Errorf("\nError: unsupported database (only MySQL or MongoDB)")
 	}
-
 }
 
 func mysqlDump(destination string, containerId string, env domain.DockerContainerEnv, backupDir string) error {

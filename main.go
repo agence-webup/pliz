@@ -20,7 +20,7 @@ func main() {
 
 	app := cli.App("pliz", "Manage projects building")
 
-	app.Version("v version", "Pliz 4 (build 13)")
+	app.Version("v version", "Pliz 5 dev (build 14)")
 
 	// option to change the Pliz env
 	plizEnv := app.String(cli.StringOpt{
@@ -89,7 +89,10 @@ func main() {
 			if prod {
 				backup := prompter.YN("You're in production. Do you want to make a backup?", true)
 				if backup {
-					actions.BackupActionHandler(executionContext, nil, nil, nil)
+					err := actions.BackupActionHandler(executionContext, nil, nil, nil)
+					if err != nil {
+						fmt.Printf("\n%s: %v\n", color.RedString("Error during backup"), err)
+					}
 					fmt.Println("")
 				}
 
@@ -271,7 +274,11 @@ func main() {
 				backupDB = nil
 			}
 
-			actions.BackupActionHandler(executionContext, backupFiles, backupDB, outputFilename)
+			err := actions.BackupActionHandler(executionContext, backupFiles, backupDB, outputFilename)
+			if err != nil {
+				fmt.Printf("\n%s: %v\n", color.RedString("Error during backup"), err)
+				cli.Exit(1)
+			}
 		}
 	})
 
