@@ -41,6 +41,7 @@ func BackupActionHandler(ctx domain.ExecutionContext, backupFilesOpt *bool, back
 	if err != nil {
 		return fmt.Errorf("Unable to create a backup directory: %s\n", err)
 	}
+	defer os.RemoveAll(backupDir)
 
 	// config files backup
 	if len(config.Get().ConfigFiles) > 0 {
@@ -122,10 +123,10 @@ func BackupActionHandler(ctx domain.ExecutionContext, backupFilesOpt *bool, back
 	}
 
 	// clean tmp
-	err = os.RemoveAll(backupDir)
-	if err != nil {
-		return fmt.Errorf("Unable to remove temp folder: %s\n", err)
-	}
+	// err = os.RemoveAll(backupDir)
+	// if err != nil {
+	// 	return fmt.Errorf("Unable to remove temp folder: %s\n", err)
+	// }
 
 	fmt.Printf("\n %s Done\n", color.GreenString("✓"))
 	return nil
