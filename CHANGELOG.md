@@ -1,5 +1,10 @@
+# rev 5
+8/21/2016
+
+- Improve error handling for `pliz backup`
+
 # rev 4
-WIP
+6/8/2016
 
 - Don't display access url after `pliz start` for production environment
 - Fix #3: `pliz restore` prompts to `false` by default
