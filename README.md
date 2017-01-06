@@ -5,7 +5,7 @@ Pliz is a CLI tool wrapping some Docker/Docker Compose commands allowing to exec
 * build the project: build images, start containers and execute tasks like `npm install` or `gulp`.
 * start/stop the project
 * execute some tasks
-* backup/restore a running project
+* backup/restore a running project (database & files)
 
 Pliz makes some assumptions:
 
@@ -14,22 +14,25 @@ Pliz makes some assumptions:
 * some default tasks are defined inside Pliz: `bower`, `composer`, `db:update`, `gulp`, `npm`.
 * configuration can be made using a `pliz.yml` file at project root. This configuration file can be used to:
 
-    * override Compose services names
+    * override Compose service names
     * define configuration files inside the project that must be created by developers
-    * define installations tasks (see below `pliz install`)
+    * define installation tasks (see below `pliz install`)
     * override default tasks behaviour
     * define new tasks
     * define some additionnal services to start with default ones
+    * define backup content
+
+Look at [pliz.example.yml](https://github.com/agence-webup/pliz/blob/master/pliz.example.yml) to see an example.
 
 ## How to use it
 
 ### Installation
 
-Download the binary from releases for your system and move it into your $PATH (for example: `/usr/local/bin/pliz`)
+Download the binary from [releases](https://github.com/agence-webup/pliz/releases) for your system and move it into your `$PATH` (for example: `/usr/local/bin/pliz`)
 
 ### Usage
 
-Just call `pliz` and some help will be displayed:
+Just call `pliz` and some help will be displayed (The command must be run in a Docker Compose project and a `pliz.yml` file must be present):
 
 ```bash
 % pliz
