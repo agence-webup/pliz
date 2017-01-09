@@ -8,11 +8,12 @@ import (
 type TaskID string
 
 type Task struct {
-	Name           TaskID
-	Description    string
-	Container      *string
-	ExecutionCheck TaskExecutionCheck
-	CommandArgs    CommandArgs
+	Name            TaskID
+	Description     string
+	Container       *string
+	ExecutionCheck  TaskExecutionCheck
+	CommandArgs     CommandArgs
+	AdditionnalArgs CommandArgs
 }
 
 func DefaultTaskNames() []TaskID {
@@ -32,11 +33,13 @@ func (t Task) Execute(context TaskExecutionContext) bool {
 		return false
 	}
 
+	args := append(t.CommandArgs, t.AdditionnalArgs...)
+
 	var command Command
 	if t.Container != nil {
-		command = NewContainerCommand(*t.Container, t.CommandArgs, []string{}, context.Prod)
+		command = NewContainerCommand(*t.Container, args, []string{}, context.Prod)
 	} else {
-		command = NewCommand(t.CommandArgs)
+		command = NewCommand(args)
 	}
 	command.Execute()
 
