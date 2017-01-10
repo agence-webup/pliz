@@ -253,10 +253,7 @@ func main() {
 			task := config.Get().Tasks[domain.TaskID(id)]
 
 			cmd.Command(id, task.Description, func(cmd *cli.Cmd) {
-				cmd.Spec = "[-- ARG...]"
-				args := cmd.StringsArg("ARG", nil, "Additionnal arguments to pass to the executed command")
-
-				cmd.Action = actions.RunTaskActionHandler(task, args, prod)
+				cmd.Action = actions.RunTaskActionHandler(task, prod)
 			})
 		}
 	})
