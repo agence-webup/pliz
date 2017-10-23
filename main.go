@@ -284,11 +284,23 @@ func main() {
 
 	app.Command("restore", "Restore a backup (Warning: files will be overrided)", func(cmd *cli.Cmd) {
 
-		cmd.Spec = "FILE"
+		cmd.Spec = "[-q [--config-files] [--files] [--db]] FILE"
+
+		quiet := cmd.BoolOpt("q quiet", false, "Avoid prompt")
+		restoreConfigFiles := cmd.BoolOpt("config-files", false, "Indicates if config files will be restored")
+		restoreFiles := cmd.BoolOpt("files", false, "Indicates if files will be restored")
+		restoreDB := cmd.BoolOpt("db", false, "Indicates if DB will be restored")
+
 		file := cmd.StringArg("FILE", "", "A pliz backup file (tar.gz)")
 
 		cmd.Action = func() {
-			actions.RestoreActionHandler(executionContext, *file)
+			if *quiet == false {
+				restoreConfigFiles = nil
+				restoreFiles = nil
+				restoreDB = nil
+			}
+
+			actions.RestoreActionHandler(executionContext, *file, restoreConfigFiles, restoreFiles, restoreDB)
 		}
 	})
 

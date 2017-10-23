@@ -18,16 +18,45 @@ import (
 )
 
 // RestoreActionHandler handle the action for 'pliz restore'
-func RestoreActionHandler(ctx domain.ExecutionContext, file string) {
+func RestoreActionHandler(ctx domain.ExecutionContext, file string, restoreConfigFilesOpt *bool, restoreFilesOpt *bool, restoreDBOpt *bool) {
 
-	if ctx.IsProd() {
+	isQuiet := restoreConfigFilesOpt == nil && restoreFilesOpt == nil && restoreDBOpt == nil
+
+	if ctx.IsProd() && !isQuiet {
 		ok := prompter.YN("You're in production. Are you sure you want to continue?", false)
 		if !ok {
 			return
 		}
 	}
 
-	err := untar(ctx, file)
+	if !isQuiet {
+		fmt.Printf(" %s ️ Choose what you want to restore:\n", color.YellowString("▶"))
+	}
+
+	configFilesRestoration := false
+	if restoreConfigFilesOpt == nil && len(config.Get().ConfigFiles) > 0 {
+		configFilesRestoration = prompter.YN("     - configuration files", false)
+	} else if restoreConfigFilesOpt != nil {
+		configFilesRestoration = *restoreConfigFilesOpt
+	}
+
+	filesRestoration := false
+	if restoreFilesOpt == nil && len(config.Get().BackupConfig.Files) > 0 {
+		filesRestoration = prompter.YN("     - others files", false)
+	} else if restoreFilesOpt != nil {
+		filesRestoration = *restoreFilesOpt
+	}
+
+	dbRestoration := false
+	if restoreDBOpt == nil && len(config.Get().BackupConfig.Databases) > 0 {
+		dbRestoration = prompter.YN("     - database dumps", false)
+	} else if restoreDBOpt != nil {
+		dbRestoration = *restoreDBOpt
+	}
+
+	fmt.Printf("\n\n")
+
+	err := untar(ctx, file, configFilesRestoration, filesRestoration, dbRestoration)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -35,15 +64,7 @@ func RestoreActionHandler(ctx domain.ExecutionContext, file string) {
 	fmt.Printf("\n %s Done\n", color.GreenString("✓"))
 }
 
-func untar(ctx domain.ExecutionContext, tarball string) error {
-
-	// choices
-	fmt.Printf(" %s ️ Choose what you want to restore:\n", color.YellowString("▶"))
-	configFilesRestoration := prompter.YN("     - configuration files", false)
-	filesRestoration := prompter.YN("     - others files", false)
-	dbRestoration := prompter.YN("     - database dumps", false)
-
-	fmt.Printf("\n\n")
+func untar(ctx domain.ExecutionContext, tarball string, configFilesRestoration bool, filesRestoration bool, dbRestoration bool) error {
 
 	// open the tarball
 	reader, err := os.Open(tarball)
