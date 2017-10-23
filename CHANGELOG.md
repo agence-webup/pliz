@@ -1,3 +1,9 @@
+# rev 6
+10/23/2017
+
+- Add a `quiet` option for `pliz restore`
+- Display a warning when using pliz in prod environment without a `docker-compose.prod.yml`
+
 # rev 5
 8/21/2016
 
