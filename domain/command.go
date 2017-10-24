@@ -95,9 +95,11 @@ func NewComposeCommand(list []string, prod bool) Command {
 
 	isProd := prod
 
-	if _, err := os.Stat("docker-compose.prod.yml"); os.IsNotExist(err) {
-		fmt.Printf("\n%s: The file 'docker-compose.prod.yml' does not exist.\n", color.YellowString("Warning"))
-		isProd = false
+	if isProd {
+		if _, err := os.Stat("docker-compose.prod.yml"); os.IsNotExist(err) {
+			fmt.Printf("\n%s: The file 'docker-compose.prod.yml' does not exist.\n", color.YellowString("Warning"))
+			isProd = false
+		}
 	}
 
 	args := []string{}
