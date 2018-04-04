@@ -55,4 +55,7 @@ backup:
   # supported DB: MySQL or MongoDB
   databases:
     - container: db
-      type: mongo # mysql|mongo, optional. If not present, the image name is used to try to guess the type
+      type: mysql # mysql|mongo, optional. If not present, the image name is used to try to guess the type
+      databases:  # only used for mysql. List of databases to backup
+        - db
+        - ghost

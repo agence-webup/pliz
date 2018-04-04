@@ -161,7 +161,11 @@ func (parsed parserConfig) convertToConfig(config *domain.Config) error {
 	// backup
 	backupConfig := domain.Backup{Files: parsed.Backup.Files, Databases: []domain.DatabaseBackupConfig{}}
 	for i := range parsed.Backup.Databases {
-		dbBackupConfig := domain.DatabaseBackupConfig{Container: parsed.Backup.Databases[i].Container, Type: parsed.Backup.Databases[i].Type}
+		dbBackupConfig := domain.DatabaseBackupConfig{
+			Container: parsed.Backup.Databases[i].Container,
+			Type:      parsed.Backup.Databases[i].Type,
+			Databases: parsed.Backup.Databases[i].Databases,
+		}
 		backupConfig.Databases = append(backupConfig.Databases, dbBackupConfig)
 	}
 	config.BackupConfig = backupConfig

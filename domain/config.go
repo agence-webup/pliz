@@ -37,4 +37,5 @@ type Backup struct {
 type DatabaseBackupConfig struct {
 	Container string
 	Type      string
+	Databases []string
 }

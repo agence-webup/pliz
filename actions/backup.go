@@ -158,7 +158,7 @@ func makeDump(ctx domain.ExecutionContext, dbBackup domain.DatabaseBackupConfig,
 	}
 
 	if dbType == "mysql" {
-		err := mysqlDump(path.Join(backupDir, "dump.sql"), containerID, config.Env, backupDir)
+		err := mysqlDump(containerID, config.Env, backupDir, dbBackup.Databases)
 		return err
 	} else if dbType == "mongo" {
 		err := mongoDump(path.Join(backupDir, "mongodb.archive"), containerID, config.Env, backupDir)
@@ -168,33 +168,39 @@ func makeDump(ctx domain.ExecutionContext, dbBackup domain.DatabaseBackupConfig,
 	}
 }
 
-func mysqlDump(destination string, containerId string, env domain.DockerContainerEnv, backupDir string) error {
+func mysqlDump(containerId string, env domain.DockerContainerEnv, backupDir string, databases []string) error {
 
 	password := ""
 	if value, ok := env["MYSQL_ROOT_PASSWORD"]; ok {
 		password = value
 	}
 
-	database := "db"
-	if value, ok := env["MYSQL_DATABASE"]; ok {
-		database = value
+	mysqlDatabases := []string{"db"}
+	if len(databases) > 0 {
+		mysqlDatabases = databases
+	} else {
+		if value, ok := env["MYSQL_DATABASE"]; ok {
+			mysqlDatabases = []string{value}
+		}
 	}
 
-	cmd := domain.NewCommand([]string{"docker", "exec", "-i", containerId, "mysqldump", fmt.Sprintf("--password=%s", password), database})
+	for _, database := range mysqlDatabases {
+		cmd := domain.NewCommand([]string{"docker", "exec", "-i", containerId, "mysqldump", fmt.Sprintf("--password=%s", password), database})
 
-	file, err := ioutil.TempFile(backupDir, "plizdump")
-	if err != nil {
-		fmt.Println("Unable to create a tmp file:")
-		return err
+		file, err := ioutil.TempFile(backupDir, "plizdump")
+		if err != nil {
+			fmt.Println("Unable to create a tmp file:")
+			return err
+		}
+		defer file.Close()
+
+		if err := cmd.WriteResultToFile(file); err != nil {
+			os.Remove(file.Name())
+			return err
+		}
+
+		os.Rename(file.Name(), path.Join(backupDir, database+".sql"))
 	}
-	defer file.Close()
-
-	if err := cmd.WriteResultToFile(file); err != nil {
-		os.Remove(file.Name())
-		return err
-	}
-
-	os.Rename(file.Name(), destination)
 
 	return nil
 }

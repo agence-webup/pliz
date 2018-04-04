@@ -143,8 +143,9 @@ func untar(ctx domain.ExecutionContext, tarball string, configFilesRestoration b
 
 						if strings.Contains(comps[1], "mongo") {
 							restoreMongo(containerID, tarReader)
-						} else if strings.Contains(comps[1], "dump") {
-							restoreMySQL(ctx, containerID, tarReader)
+						} else if strings.Contains(comps[1], "sql") {
+							// comps[1] is the filename of the dump (containing the database name, e.g. db.sql)
+							restoreMySQL(ctx, containerID, comps[1], tarReader)
 						} else {
 							fmt.Println("Unrecognized db backup.")
 						}
@@ -188,7 +189,7 @@ func restoreMongo(containerID string, mongoArchiveReader *tar.Reader) {
 	cmd.ExecuteWithStdin(mongoArchiveReader)
 }
 
-func restoreMySQL(ctx domain.ExecutionContext, containerID string, mysqlDumpReader *tar.Reader) {
+func restoreMySQL(ctx domain.ExecutionContext, containerID string, dumpFilename string, mysqlDumpReader *tar.Reader) {
 
 	containerConfig, err := utils.GetContainerConfig(containerID, ctx)
 	if err != nil {
@@ -200,9 +201,12 @@ func restoreMySQL(ctx domain.ExecutionContext, containerID string, mysqlDumpRead
 		password = value
 	}
 
-	database := "db"
-	if value, ok := containerConfig.Env["MYSQL_DATABASE"]; ok {
-		database = value
+	ext := filepath.Ext(dumpFilename)
+	database := strings.Replace(dumpFilename, ext, "", 1)
+
+	// backward compatibility, supporting previous filename (dump.sql)
+	if database == "dump" {
+		database = "db"
 	}
 
 	cmd := domain.NewCommand([]string{"docker", "exec", "-i", containerID, "mysql", fmt.Sprintf("--password=%s", password), database})

@@ -29,6 +29,7 @@ type BackupSpec struct {
 }
 
 type DatabaseBackupSpec struct {
-	Container string `yaml:"container"`
-	Type      string `yaml:"type"`
+	Container string   `yaml:"container"`
+	Type      string   `yaml:"type"`
+	Databases []string `yaml:"databases"`
 }
