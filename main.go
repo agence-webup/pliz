@@ -13,14 +13,14 @@ import (
 
 	"github.com/Songmu/prompter"
 	"github.com/fatih/color"
-	"github.com/jawher/mow.cli"
+	cli "github.com/jawher/mow.cli"
 )
 
 func main() {
 
 	app := cli.App("pliz", "Manage projects building")
 
-	app.Version("v version", "Pliz 7 (build 18)")
+	app.Version("v version", "Pliz 8 (build 19)")
 
 	// option to change the Pliz env
 	plizEnv := app.String(cli.StringOpt{

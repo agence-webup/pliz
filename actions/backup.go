@@ -152,19 +152,21 @@ func makeDump(ctx domain.ExecutionContext, dbBackup domain.DatabaseBackupConfig,
 	if dbType == "" {
 		if strings.Contains(config.Image, "mysql") {
 			dbType = "mysql"
+		} else if strings.Contains(config.Image, "postgres") {
+			dbType = "postgres"
 		} else if strings.Contains(config.Image, "mongo") {
 			dbType = "mongo"
 		}
 	}
 
 	if dbType == "mysql" {
-		err := mysqlDump(containerID, config.Env, backupDir, dbBackup.Databases)
-		return err
+		return mysqlDump(containerID, config.Env, backupDir, dbBackup.Databases)
+	} else if dbType == "postgres" {
+		return postgresDump(containerID, config.Env, backupDir, dbBackup.Databases)
 	} else if dbType == "mongo" {
-		err := mongoDump(path.Join(backupDir, "mongodb.archive"), containerID, config.Env, backupDir)
-		return err
+		return mongoDump(path.Join(backupDir, "mongodb.archive"), containerID, config.Env, backupDir)
 	} else {
-		return fmt.Errorf("\nError: unsupported database (only MySQL or MongoDB)")
+		return fmt.Errorf("\nError: unsupported database (only MySQL, PostgreSQL or MongoDB)")
 	}
 }
 
@@ -200,6 +202,48 @@ func mysqlDump(containerId string, env domain.DockerContainerEnv, backupDir stri
 		}
 
 		os.Rename(file.Name(), path.Join(backupDir, database+".sql"))
+	}
+
+	return nil
+}
+
+func postgresDump(containerId string, env domain.DockerContainerEnv, backupDir string, databases []string) error {
+
+	password := ""
+	if value, ok := env["POSTGRES_PASSWORD"]; ok {
+		password = value
+	}
+
+	user := "postgres"
+	if value, ok := env["POSTGRES_USER"]; ok {
+		user = value
+	}
+
+	postgresDatabases := []string{"db"}
+	if len(databases) > 0 {
+		postgresDatabases = databases
+	} else {
+		if value, ok := env["POSTGRES_DB"]; ok {
+			postgresDatabases = []string{value}
+		}
+	}
+
+	for _, database := range postgresDatabases {
+		cmd := domain.NewCommand([]string{"docker", "exec", "-i", "-e", fmt.Sprintf("PGPASSWORD=\"%s\"", password), containerId, "pg_dump", "-Fc", fmt.Sprintf("--username=%s", user), database})
+
+		file, err := ioutil.TempFile(backupDir, "plizdump")
+		if err != nil {
+			fmt.Println("Unable to create a tmp file:")
+			return err
+		}
+		defer file.Close()
+
+		if err := cmd.WriteResultToFile(file); err != nil {
+			os.Remove(file.Name())
+			return err
+		}
+
+		os.Rename(file.Name(), path.Join(backupDir, database+".dump"))
 	}
 
 	return nil

@@ -143,6 +143,8 @@ func untar(ctx domain.ExecutionContext, tarball string, configFilesRestoration b
 
 						if strings.Contains(comps[1], "mongo") {
 							restoreMongo(containerID, tarReader)
+						} else if strings.Contains(comps[1], ".dump") {
+							restorePostgres(ctx, containerID, comps[1], tarReader)
 						} else if strings.Contains(comps[1], "sql") {
 							// comps[1] is the filename of the dump (containing the database name, e.g. db.sql)
 							restoreMySQL(ctx, containerID, comps[1], tarReader)
@@ -211,4 +213,28 @@ func restoreMySQL(ctx domain.ExecutionContext, containerID string, dumpFilename 
 
 	cmd := domain.NewCommand([]string{"docker", "exec", "-i", containerID, "mysql", fmt.Sprintf("--password=%s", password), database})
 	cmd.ExecuteWithStdin(mysqlDumpReader)
+}
+
+func restorePostgres(ctx domain.ExecutionContext, containerID string, dumpFilename string, postgresDumpReader *tar.Reader) {
+
+	containerConfig, err := utils.GetContainerConfig(containerID, ctx)
+	if err != nil {
+		return
+	}
+
+	user := "postgres"
+	if value, ok := containerConfig.Env["POSTGRES_USER"]; ok {
+		user = value
+	}
+
+	password := ""
+	if value, ok := containerConfig.Env["POSTGRES_PASSWORD"]; ok {
+		password = value
+	}
+
+	ext := filepath.Ext(dumpFilename)
+	database := strings.Replace(dumpFilename, ext, "", 1)
+
+	cmd := domain.NewCommand([]string{"docker", "exec", "-i", "-e", fmt.Sprintf("PGPASSWORD=\"%s\"", password), containerID, "pg_restore", fmt.Sprintf("--username=%s", user), "-d", database})
+	cmd.ExecuteWithStdin(postgresDumpReader)
 }
