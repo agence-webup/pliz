@@ -20,7 +20,7 @@ func main() {
 
 	app := cli.App("pliz", "Manage projects building")
 
-	app.Version("v version", "Pliz 8 (build 19)")
+	app.Version("v version", "Pliz 8 (build 20)")
 
 	// option to change the Pliz env
 	plizEnv := app.String(cli.StringOpt{
@@ -81,6 +81,13 @@ func main() {
 	app.Command("install", "Install (or update) the project dependencies (docker containers, npm, composer...)", func(cmd *cli.Cmd) {
 
 		forced := cmd.BoolOpt("f force", false, "Force the installation process")
+		skipped := cmd.Strings(cli.StringsOpt{
+			Name:   "s skip",
+			Value:  []string{},
+			Desc:   "Allows to skip some default tasks",
+			EnvVar: "PLIZ_INSTALL_SKIP",
+		})
+		// cmd.StringsOpt("skip", []string{}, "")
 
 		cmd.Action = func() {
 
@@ -161,9 +168,18 @@ func main() {
 
 			fmt.Printf("\n %s ️ Run install tasks...\n", color.YellowString("▶"))
 
+		TaskLoop:
 			for _, id := range config.InstallTasks {
 
 				task := config.Tasks[id]
+
+				// check if the task is skipped
+				for _, taskName := range *skipped {
+					if taskName == string(task.Name) {
+						fmt.Printf("\n%s %s %s\n", color.YellowString("-->"), task.Name, color.YellowString("skipped"))
+						continue TaskLoop
+					}
+				}
 
 				fmt.Printf("\n%s %s %s\n", color.CyanString("***"), task.Name, color.CyanString("***"))
 
