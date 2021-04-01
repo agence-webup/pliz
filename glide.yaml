@@ -1,8 +1,0 @@
-package: webup/pliz
-import:
-- package: github.com/jawher/mow.cli
-- package: gopkg.in/yaml.v2
-- package: github.com/Songmu/prompter
-- package: github.com/mattn/go-isatty
-- package: github.com/jhoonb/archivex
-- package: github.com/fatih/color
