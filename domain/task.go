@@ -22,6 +22,7 @@ func DefaultTaskNames() []TaskID {
 		"composer",
 		"gulp",
 		"db:update",
+		"git:hook",
 	}
 }
 

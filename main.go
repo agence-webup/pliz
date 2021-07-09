@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"regexp"
 	"sort"
@@ -194,7 +195,14 @@ func main() {
 			}
 
 			/*
-			 * 5. The end
+			 * 5. Plug Git precommit Hook
+			 */
+
+			fmt.Printf("%s %s\n", color.MagentaString("Executing:"), "git:plug-hook")
+			cmd = domain.NewCommand([]string{"pliz", "git:plug-hook"})
+			cmd.Execute()
+			/*
+			 * 6. The end
 			 */
 
 			fmt.Printf("\n\n%s You may now run '%s' to launch your project\n", color.GreenString("✓"), color.MagentaString("pliz start"))
@@ -317,6 +325,37 @@ func main() {
 			}
 
 			actions.RestoreActionHandler(executionContext, *file, restoreConfigFiles, restoreFiles, restoreDB)
+		}
+	})
+
+	app.Command("git:plug-hook", "Register hooks in the Git repository", func(cmd *cli.Cmd) {
+		cmd.Action = func() {
+			fmt.Printf("%s %s\n", color.MagentaString("Executing:"), "git:hook")
+			code :=
+				`#!/bin/sh
+		
+# don't validate if phpcs is not found
+PHPCS="$(command -v phpcs)"
+if [ -z "$PHPCS" ]; then
+		echo "phpcs unavailable; skipping PHP Standards validation..."
+		exit 
+fi
+
+# get all modified and staged PHP files (.blade included)
+# and run phpcs over them
+FILES="$(git diff --name-only --staged | grep .php | tr "\n" " ")"
+if [ ! -z "$FILES" ]; then
+		OUTPUT=$(phpcs --report=summary $FILES)
+		if [ ! -z "$OUTPUT" ]; then
+				echo "$OUTPUT"
+				exit 1
+		fi
+fi
+exit 0`
+			err := ioutil.WriteFile(".git/hooks/pre-commit", []byte(code), 0755)
+			if err != nil {
+				fmt.Printf("Unable to write file: %v", err)
+			}
 		}
 	})
 
