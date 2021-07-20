@@ -331,8 +331,7 @@ func main() {
 	app.Command("git:plug-hook", "Register hooks in the Git repository", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
 			fmt.Printf("%s %s\n", color.MagentaString("Executing:"), "git:hook")
-			code :=
-				`#!/bin/sh
+			code := `#!/bin/sh
 		
 # don't validate if phpcs is not found
 PHPCS="$(command -v phpcs)"
@@ -352,9 +351,21 @@ if [ ! -z "$FILES" ]; then
 		fi
 fi
 exit 0`
-			err := ioutil.WriteFile(".git/hooks/pre-commit", []byte(code), 0755)
+			// try to write the specific project hook
+			// if it cannot be read (i.e. does not exist),
+			// then write the default code above
+			script, err := ioutil.ReadFile("ops/git/hooks/pre-commit")
 			if err != nil {
-				fmt.Printf("Unable to write file: %v", err)
+				err := ioutil.WriteFile(".git/hooks/pre-commit", script, 0755)
+				if err != nil {
+					fmt.Printf("Unable to write file: %v", err)
+				}
+			} else {
+				fmt.Printf("./ops/git/hooks/pre-commit not found, fallback to default script")
+				err := ioutil.WriteFile(".git/hooks/pre-commit", []byte(code), 0755)
+				if err != nil {
+					fmt.Printf("Unable to write file: %v", err)
+				}
 			}
 		}
 	})
