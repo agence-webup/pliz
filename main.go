@@ -398,9 +398,9 @@ func plugProjectHook(script []byte) {
 }
 
 func plugDefaultHook() {
-	fmt.Printf("./ops/git/hooks/pre-commit not found, fallback to default hook")
+	fmt.Printf("./ops/git/hooks/pre-commit not found, fallback to default hook\n")
 
-	script, err := resources.ReadFile("git-hooks/pre-commit")
+	script, err := resources.ReadFile("resources/git-hooks/pre-commit")
 
 	if err != nil {
 		fmt.Printf("%s %v\n", color.RedString("Unable to read default hook:"), err)
