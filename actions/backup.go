@@ -152,6 +152,8 @@ func makeDump(ctx domain.ExecutionContext, dbBackup domain.DatabaseBackupConfig,
 	if dbType == "" {
 		if strings.Contains(config.Image, "mysql") {
 			dbType = "mysql"
+		} else if strings.Contains(config.Image, "mariadb") {
+			dbType = "mariadb"
 		} else if strings.Contains(config.Image, "postgres") {
 			dbType = "postgres"
 		} else if strings.Contains(config.Image, "mongo") {
@@ -159,14 +161,14 @@ func makeDump(ctx domain.ExecutionContext, dbBackup domain.DatabaseBackupConfig,
 		}
 	}
 
-	if dbType == "mysql" {
+	if dbType == "mysql" || dbType == "mariadb" {
 		return mysqlDump(containerID, config.Env, backupDir, dbBackup.Databases)
 	} else if dbType == "postgres" {
 		return postgresDump(containerID, config.Env, backupDir, dbBackup.Databases)
 	} else if dbType == "mongo" {
 		return mongoDump(path.Join(backupDir, "mongodb.archive"), containerID, config.Env, backupDir)
 	} else {
-		return fmt.Errorf("\nError: unsupported database (only MySQL, PostgreSQL or MongoDB)")
+		return fmt.Errorf("\nError: unsupported database (only MySQL, MariaDB, PostgreSQL or MongoDB)")
 	}
 }
 
