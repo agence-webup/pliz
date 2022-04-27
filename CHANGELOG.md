@@ -1,3 +1,25 @@
+# rev 11
+
+- Add support for MariaDB database
+- Add encryption on backup
+
+# rev 10
+
+- Add the task `git:hook`
+
+# rev 9
+
+- Drop database items before restoring a Postgres DB
+
+# rev 8
+
+- Add support for PostgreSQL database
+- add the ability to skip some tasks during `pliz install`
+
+# rev 7
+
+- Add databases configuration for MySQL backup
+
 # rev 6
 10/23/2017
 
