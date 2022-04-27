@@ -167,7 +167,7 @@ func untar(ctx domain.ExecutionContext, tarball string, configFilesRestoration b
 
 		// databases
 		if dbRestoration {
-			if strings.HasPrefix(header.Name, "databases/") {
+			if strings.HasPrefix(header.Name, "databases/") && !info.IsDir() {
 				dumpPath := strings.Replace(header.Name, "databases/", "", 1)
 				// separate path components to get dump info
 				comps := strings.Split(dumpPath, string(filepath.Separator))
