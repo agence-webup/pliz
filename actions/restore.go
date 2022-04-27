@@ -2,10 +2,12 @@ package actions
 
 import (
 	"archive/tar"
+	"bytes"
 	"compress/gzip"
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -18,9 +20,9 @@ import (
 )
 
 // RestoreActionHandler handle the action for 'pliz restore'
-func RestoreActionHandler(ctx domain.ExecutionContext, file string, restoreConfigFilesOpt *bool, restoreFilesOpt *bool, restoreDBOpt *bool) {
+func RestoreActionHandler(ctx domain.ExecutionContext, file string, restoreConfigFilesOpt *bool, restoreFilesOpt *bool, restoreDBOpt *bool, key *string) {
 
-	isQuiet := restoreConfigFilesOpt == nil && restoreFilesOpt == nil && restoreDBOpt == nil
+	isQuiet := !(restoreConfigFilesOpt == nil && restoreFilesOpt == nil && restoreDBOpt == nil)
 
 	if ctx.IsProd() && !isQuiet {
 		ok := prompter.YN("You're in production. Are you sure you want to continue?", false)
@@ -30,7 +32,7 @@ func RestoreActionHandler(ctx domain.ExecutionContext, file string, restoreConfi
 	}
 
 	if !isQuiet {
-		fmt.Printf(" %s ️ Choose what you want to restore:\n", color.YellowString("▶"))
+		fmt.Printf(" %s Choose what you want to restore:\n", color.YellowString("▶"))
 	}
 
 	configFilesRestoration := false
@@ -56,16 +58,58 @@ func RestoreActionHandler(ctx domain.ExecutionContext, file string, restoreConfi
 
 	fmt.Printf("\n\n")
 
+	encryptedExtension := file[len(file)-4:]
+	isEncrypted := encryptedExtension == ".enc" && key != nil || *key != ""
+
+	if isEncrypted {
+		var err error
+		file, err = decrypt(file, key)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+	}
+
 	err := untar(ctx, file, configFilesRestoration, filesRestoration, dbRestoration)
 	if err != nil {
 		fmt.Println(err)
+		return
+	}
+
+	// remove decrypted file
+	if isEncrypted {
+		os.Remove(file)
 	}
 
 	fmt.Printf("\n %s Done\n", color.GreenString("✓"))
 }
 
-func untar(ctx domain.ExecutionContext, tarball string, configFilesRestoration bool, filesRestoration bool, dbRestoration bool) error {
+func decrypt(file string, key *string) (string, error) {
+	encryptedExtension := file[len(file)-4:]
 
+	if encryptedExtension != ".enc" || key == nil || *key == "" {
+		return file, nil
+	}
+
+	// decrypt in an hidden file
+	outputFile := "." + file[:len(file)-4]
+	command := fmt.Sprintf("openssl enc -d -aes-256-cbc -salt -k %s -in %s -out %s", *key, file, outputFile)
+	cmd := exec.Command("bash", "-c", command)
+
+	var out bytes.Buffer
+	var stderr bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = &stderr
+	err := cmd.Run()
+	if err != nil {
+		return "", fmt.Errorf(fmt.Sprint(err) + ": " + stderr.String())
+	}
+	fmt.Printf("\n %s %s decrypted\n", color.GreenString("✓"), file)
+
+	return outputFile, nil
+}
+
+func untar(ctx domain.ExecutionContext, tarball string, configFilesRestoration bool, filesRestoration bool, dbRestoration bool) error {
 	// open the tarball
 	reader, err := os.Open(tarball)
 	if err != nil {
@@ -163,7 +207,9 @@ func untar(ctx domain.ExecutionContext, tarball string, configFilesRestoration b
 }
 
 func copyFile(dest string, source io.Reader, sourceInfo os.FileInfo) error {
-
+	if sourceInfo.IsDir() {
+		return nil
+	}
 	dir := dest
 	if !sourceInfo.IsDir() {
 		dir = filepath.Dir(dest)

@@ -1,9 +1,12 @@
 package actions
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"strings"
@@ -17,7 +20,7 @@ import (
 	"github.com/jhoonb/archivex"
 )
 
-func BackupActionHandler(ctx domain.ExecutionContext, backupFilesOpt *bool, backupDBOpt *bool, outputOpt *string) error {
+func BackupActionHandler(ctx domain.ExecutionContext, backupFilesOpt *bool, backupDBOpt *bool, outputOpt *string, key *string) error {
 
 	backupFiles := false
 	if backupFilesOpt == nil && len(config.Get().BackupConfig.Files) > 0 {
@@ -101,12 +104,6 @@ func BackupActionHandler(ctx domain.ExecutionContext, backupFilesOpt *bool, back
 		}
 	}
 
-	tar := new(archivex.TarFile)
-	tar.Create(path.Join(backupDir, "backup_archive.tar.gz"))
-	tar.AddAll(path.Join(backupDir, "backup"), false)
-	tar.Close()
-
-	// save the archive with the right name
 	archiveFilename := ""
 	if outputOpt != nil && *outputOpt != "" {
 		archiveFilename = *outputOpt
@@ -114,9 +111,44 @@ func BackupActionHandler(ctx domain.ExecutionContext, backupFilesOpt *bool, back
 		now := time.Now().UTC()
 		year, month, day := now.Date()
 		hour, minutes, seconds := now.Clock()
-		archiveFilename = fmt.Sprintf("backup-%d%02d%02d_%02d%02d%02d.tar.gz", year, month, day, hour, minutes, seconds)
+		encryptedExtension := ""
+		if key != nil && *key != "" {
+			encryptedExtension = ".enc"
+		}
+		archiveFilename = fmt.Sprintf("backup-%d%02d%02d_%02d%02d%02d.tar.gz%s", year, month, day, hour, minutes, seconds, encryptedExtension)
 	}
 
+	wd, err := os.Getwd()
+	if err != nil {
+		log.Println(err)
+		return nil
+	}
+	archiveFilename = path.Join(wd, archiveFilename)
+
+	// encrypt tar gz
+	if key != nil && *key != "" {
+		command := fmt.Sprintf("cd %s; tar -czf - * | openssl enc -aes-256-cbc -salt -k %s -out %s", path.Join(backupDir, "backup"), *key, archiveFilename)
+		cmd := exec.Command("bash", "-c", command)
+
+		var out bytes.Buffer
+		var stderr bytes.Buffer
+		cmd.Stdout = &out
+		cmd.Stderr = &stderr
+		err = cmd.Run()
+		if err != nil {
+			return fmt.Errorf(fmt.Sprint(err) + ": " + stderr.String())
+		}
+
+		fmt.Printf("\n %s Done\n", color.GreenString("✓"))
+		return nil
+	}
+
+	tar := new(archivex.TarFile)
+	tar.Create(path.Join(backupDir, "backup_archive.tar.gz"))
+	tar.AddAll(path.Join(backupDir, "backup"), false)
+	tar.Close()
+
+	// save the archive with the right name
 	err = os.Rename(path.Join(backupDir, "backup_archive.tar.gz"), archiveFilename)
 	if err != nil {
 		return fmt.Errorf("Unable to create the backup file: %s\n", err)

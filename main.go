@@ -25,7 +25,7 @@ func main() {
 
 	app := cli.App("pliz", "Manage projects building")
 
-	app.Version("v version", "Pliz 10")
+	app.Version("v version", "Pliz 11")
 
 	// option to change the Pliz env
 	plizEnv := app.String(cli.StringOpt{
@@ -101,7 +101,7 @@ func main() {
 			if prod {
 				backup := prompter.YN("You're in production. Do you want to make a backup?", true)
 				if backup {
-					err := actions.BackupActionHandler(executionContext, nil, nil, nil)
+					err := actions.BackupActionHandler(executionContext, nil, nil, nil, nil)
 					if err != nil {
 						fmt.Printf("\n%s: %v\n", color.RedString("Error during backup"), err)
 					}
@@ -287,13 +287,14 @@ func main() {
 
 	app.Command("backup", "Perform a backup of the project", func(cmd *cli.Cmd) {
 
-		cmd.Spec = "[-q [--files] [--db]] [-o]"
+		cmd.Spec = "[-q [--files] [--db]] [-o] [-k]"
 
 		quiet := cmd.BoolOpt("q quiet", false, "Avoid prompt")
 		backupFiles := cmd.BoolOpt("files", false, "Indicates if files will be backup")
 		backupDB := cmd.BoolOpt("db", false, "Indicates if DB will be backup")
 
 		outputFilename := cmd.StringOpt("o output", "", "Set the filename of the tar.gz")
+		key := cmd.StringOpt("k", "", "the encryption password")
 
 		cmd.Action = func() {
 			if *quiet == false {
@@ -301,7 +302,7 @@ func main() {
 				backupDB = nil
 			}
 
-			err := actions.BackupActionHandler(executionContext, backupFiles, backupDB, outputFilename)
+			err := actions.BackupActionHandler(executionContext, backupFiles, backupDB, outputFilename, key)
 			if err != nil {
 				fmt.Printf("\n%s: %v\n", color.RedString("Error during backup"), err)
 				cli.Exit(1)
@@ -311,12 +312,13 @@ func main() {
 
 	app.Command("restore", "Restore a backup (Warning: files will be overrided)", func(cmd *cli.Cmd) {
 
-		cmd.Spec = "[-q [--config-files] [--files] [--db]] FILE"
+		cmd.Spec = "[-q [--config-files] [--files] [--db]] [-k] FILE"
 
 		quiet := cmd.BoolOpt("q quiet", false, "Avoid prompt")
 		restoreConfigFiles := cmd.BoolOpt("config-files", false, "Indicates if config files will be restored")
 		restoreFiles := cmd.BoolOpt("files", false, "Indicates if files will be restored")
 		restoreDB := cmd.BoolOpt("db", false, "Indicates if DB will be restored")
+		key := cmd.StringOpt("k", "", "the encryption password")
 
 		file := cmd.StringArg("FILE", "", "A pliz backup file (tar.gz)")
 
@@ -327,7 +329,7 @@ func main() {
 				restoreDB = nil
 			}
 
-			actions.RestoreActionHandler(executionContext, *file, restoreConfigFiles, restoreFiles, restoreDB)
+			actions.RestoreActionHandler(executionContext, *file, restoreConfigFiles, restoreFiles, restoreDB, key)
 		}
 	})
 
