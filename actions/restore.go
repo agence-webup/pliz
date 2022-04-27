@@ -78,7 +78,11 @@ func RestoreActionHandler(ctx domain.ExecutionContext, file string, restoreConfi
 
 	// remove decrypted file
 	if isEncrypted {
-		os.Remove(file)
+		err = os.Remove(file)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
 	}
 
 	fmt.Printf("\n %s Done\n", color.GreenString("✓"))
@@ -102,6 +106,11 @@ func decrypt(file string, key *string) (string, error) {
 	cmd.Stderr = &stderr
 	err := cmd.Run()
 	if err != nil {
+		removeErr := os.Remove(outputFile)
+		if removeErr != nil {
+			fmt.Println(removeErr)
+		}
+
 		return "", fmt.Errorf(fmt.Sprint(err) + ": " + stderr.String())
 	}
 	fmt.Printf("\n %s %s decrypted\n", color.GreenString("✓"), file)
