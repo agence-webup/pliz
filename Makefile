@@ -7,7 +7,7 @@ darwin-arm64:
 	GOOS=darwin GOARCH=arm64 go build -o build/pliz_darwin_arm64 main.go
 
 linux-amd64:
-	GOOS=darwin GOARCH=amd64 go build -o build/pliz_linux_amd64 main.go
+	GOOS=linux GOARCH=amd64 go build -o build/pliz_linux_amd64 main.go
 
 windows-amd64:
-	GOOS=darwin GOARCH=amd64 go build -o build/pliz_windows_amd64.exe main.go
+	GOOS=windows GOARCH=amd64 go build -o build/pliz_windows_amd64.exe main.go
