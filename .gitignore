@@ -1,2 +1,5 @@
 vendor
 build
+
+# OS
+.DS_Store

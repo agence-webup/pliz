@@ -294,7 +294,7 @@ func main() {
 		backupDB := cmd.BoolOpt("db", false, "Indicates if DB will be backup")
 
 		outputFilename := cmd.StringOpt("o output", "", "Set the filename of the tar.gz")
-		key := cmd.StringOpt("k", "", "the encryption password")
+		key := cmd.StringOpt("k", "", "the encryption password (32 characters for a key of 256 bits)")
 
 		cmd.Action = func() {
 			if *quiet == false {

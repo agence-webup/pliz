@@ -1,12 +1,9 @@
 package actions
 
 import (
-	"bytes"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
-	"os/exec"
 	"path"
 	"path/filepath"
 	"strings"
@@ -97,13 +94,54 @@ func BackupActionHandler(ctx domain.ExecutionContext, backupFilesOpt *bool, back
 		}
 
 		for _, file := range config.Get().BackupConfig.Files {
-			err := filepath.Walk(file, walkFunc)
+			fmt.Println(file)
+			fileInfo, err := os.Stat(file)
 			if err != nil {
-				return fmt.Errorf("WARN: Unable to walk into %s\n%s\n", file, err)
+				return fmt.Errorf("%s file or directory not found \n%s\n", file, err)
+			}
+			if !fileInfo.IsDir() {
+				return fmt.Errorf("%s is not a directory \n", file)
+			}
+
+			err = filepath.Walk(file, walkFunc)
+			if err != nil {
+				return fmt.Errorf("Unable to walk into %s\n%s\n", file, err)
 			}
 		}
 	}
 
+	tmpArchiveFilename := path.Join(backupDir, "backup_archive.tar.gz")
+
+	tar := new(archivex.TarFile)
+	tar.Create(tmpArchiveFilename)
+	tar.AddAll(path.Join(backupDir, "backup"), false)
+	tar.Close()
+
+	if key != nil && *key != "" {
+		tmpEncryptedFilename := path.Join(backupDir, "backup_archive.tar.gz.enc")
+		infile, err := os.Open(tmpArchiveFilename)
+		if err != nil {
+			return fmt.Errorf("Unable to open the archive: %s\n", err)
+		}
+
+		outfile, err := os.OpenFile(tmpEncryptedFilename, os.O_RDWR|os.O_CREATE, 0644)
+		if err != nil {
+			return fmt.Errorf("Unable to create the encrypted file: %s\n", err)
+		}
+
+		aesKey := []byte(*key)
+		hmacKey := aesKey
+		err = utils.Encrypt(infile, outfile, aesKey, hmacKey)
+		if err != nil {
+			return fmt.Errorf("Unable to encrypt file: %s\n", err)
+		}
+		infile.Close()
+		outfile.Close()
+
+		tmpArchiveFilename = tmpEncryptedFilename
+	}
+
+	// save the archive with the right name
 	archiveFilename := ""
 	if outputOpt != nil && *outputOpt != "" {
 		archiveFilename = *outputOpt
@@ -118,38 +156,7 @@ func BackupActionHandler(ctx domain.ExecutionContext, backupFilesOpt *bool, back
 		archiveFilename = fmt.Sprintf("backup-%d%02d%02d_%02d%02d%02d.tar.gz%s", year, month, day, hour, minutes, seconds, encryptedExtension)
 	}
 
-	wd, err := os.Getwd()
-	if err != nil {
-		log.Println(err)
-		return nil
-	}
-	archiveFilename = path.Join(wd, archiveFilename)
-
-	// encrypt tar gz
-	if key != nil && *key != "" {
-		command := fmt.Sprintf("cd %s; tar -czf - * | openssl enc -aes-256-cbc -salt -k %s -out %s", path.Join(backupDir, "backup"), *key, archiveFilename)
-		cmd := exec.Command("bash", "-c", command)
-
-		var out bytes.Buffer
-		var stderr bytes.Buffer
-		cmd.Stdout = &out
-		cmd.Stderr = &stderr
-		err = cmd.Run()
-		if err != nil {
-			return fmt.Errorf(fmt.Sprint(err) + ": " + stderr.String())
-		}
-
-		fmt.Printf("\n %s Done\n", color.GreenString("✓"))
-		return nil
-	}
-
-	tar := new(archivex.TarFile)
-	tar.Create(path.Join(backupDir, "backup_archive.tar.gz"))
-	tar.AddAll(path.Join(backupDir, "backup"), false)
-	tar.Close()
-
-	// save the archive with the right name
-	err = os.Rename(path.Join(backupDir, "backup_archive.tar.gz"), archiveFilename)
+	err = os.Rename(tmpArchiveFilename, archiveFilename)
 	if err != nil {
 		return fmt.Errorf("Unable to create the backup file: %s\n", err)
 	}
