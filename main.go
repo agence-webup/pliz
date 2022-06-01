@@ -318,7 +318,7 @@ func main() {
 		restoreConfigFiles := cmd.BoolOpt("config-files", false, "Indicates if config files will be restored")
 		restoreFiles := cmd.BoolOpt("files", false, "Indicates if files will be restored")
 		restoreDB := cmd.BoolOpt("db", false, "Indicates if DB will be restored")
-		key := cmd.StringOpt("k", "", "the encryption password")
+		key := cmd.StringOpt("k", "", "the encryption password (32 characters for a key of 256 bits)")
 
 		file := cmd.StringArg("FILE", "", "A pliz backup file (tar.gz)")
 
