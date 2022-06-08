@@ -129,9 +129,7 @@ func BackupActionHandler(ctx domain.ExecutionContext, backupFilesOpt *bool, back
 			return fmt.Errorf("Unable to create the encrypted file: %s\n", err)
 		}
 
-		aesKey := []byte(*key)
-		hmacKey := aesKey
-		err = utils.Encrypt(infile, outfile, aesKey, hmacKey)
+		err = utils.Encrypt(infile, outfile, []byte(*key))
 		if err != nil {
 			return fmt.Errorf("Unable to encrypt file: %s\n", err)
 		}

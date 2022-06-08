@@ -110,15 +110,13 @@ func decrypt(encryptedFile string, decryptedFile string, key *string) error {
 		log.Fatal(err)
 	}
 
-	aesKey := []byte(*key)
-	hmacKey := aesKey
-	err = utils.Decrypt(infile, outfile, aesKey, hmacKey)
+	err = utils.Decrypt(infile, outfile, []byte(*key))
 	infile.Close()
 	outfile.Close()
 
 	if err != nil {
 		removeDecryptedFile(decryptedFile)
-		return fmt.Errorf("Unable to decrypt the file %s\n%s\n", decryptedFile, err)
+		return fmt.Errorf("Unable to decrypt the file %s\n%s\n", encryptedFile, err)
 	}
 	fmt.Printf("\n %s %s decrypted\n", color.GreenString("✓"), encryptedFile)
 

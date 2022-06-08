@@ -294,11 +294,9 @@ func main() {
 		backupDB := cmd.BoolOpt("db", false, "Indicates if DB will be backup")
 
 		outputFilename := cmd.StringOpt("o output", "", "Set the filename of the tar.gz")
-		key := cmd.StringOpt("k", "", "the encryption password (length must be 16, 24 or 32 characters for a key of 128, 192 or 256 bits)")
+		key := cmd.StringOpt("k", "", "the encryption password")
 
 		cmd.Action = func() {
-			checkKeyLength(key)
-
 			if *quiet == false {
 				backupFiles = nil
 				backupDB = nil
@@ -320,13 +318,11 @@ func main() {
 		restoreConfigFiles := cmd.BoolOpt("config-files", false, "Indicates if config files will be restored")
 		restoreFiles := cmd.BoolOpt("files", false, "Indicates if files will be restored")
 		restoreDB := cmd.BoolOpt("db", false, "Indicates if DB will be restored")
-		key := cmd.StringOpt("k", "", "the encryption password (length must be 16, 24 or 32 characters for a key of 128, 192 or 256 bits)")
+		key := cmd.StringOpt("k", "", "the encryption password")
 
 		file := cmd.StringArg("FILE", "", "A pliz backup file (tar.gz)")
 
 		cmd.Action = func() {
-			checkKeyLength(key)
-
 			if *quiet == false {
 				restoreConfigFiles = nil
 				restoreFiles = nil
@@ -426,17 +422,5 @@ func parseAndCheckConfig() {
 	if err != nil {
 		os.Exit(1)
 		return
-	}
-}
-
-func checkKeyLength(key *string) {
-	if key == nil {
-		return
-	}
-
-	length := len(*key)
-	if length != 16 && length != 24 && length != 32 {
-		fmt.Printf(" %s The key length must be 16, 24 or 32 \n", color.RedString("✗"))
-		cli.Exit(1)
 	}
 }

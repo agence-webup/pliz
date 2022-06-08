@@ -15,11 +15,14 @@ import (
 	"encoding/binary"
 	"errors"
 	"io"
+
+	"golang.org/x/crypto/scrypt"
 )
 
 // hmacSize must be less to BUFFER_SIZE
 const BUFFER_SIZE int = 16 * 1024
 const IV_SIZE int = 16
+const SALT_SIZE int = 32
 const V1 byte = 0x1
 const hmacSize = sha512.Size
 
@@ -27,7 +30,15 @@ const hmacSize = sha512.Size
 var ErrInvalidHMAC = errors.New("Invalid HMAC")
 
 // Encrypt the stream using the given AES-CTR and SHA512-HMAC key
-func Encrypt(in io.Reader, out io.Writer, keyAes, keyHmac []byte) (err error) {
+func Encrypt(in io.Reader, out io.Writer, key []byte) (err error) {
+	keyAes, saltAes, err := DeriveKey(key, nil)
+	if err != nil {
+		return err
+	}
+	keyHmac, saltHmac, err := DeriveKey(key, nil)
+	if err != nil {
+		return err
+	}
 
 	iv := make([]byte, IV_SIZE)
 	_, err = rand.Read(iv)
@@ -46,14 +57,22 @@ func Encrypt(in io.Reader, out io.Writer, keyAes, keyHmac []byte) (err error) {
 	// Version
 	_, err = out.Write([]byte{V1})
 	if err != nil {
-		return
+		return err
 	}
 
 	w := io.MultiWriter(out, HMAC)
 
 	_, err = w.Write(iv)
 	if err != nil {
-		return
+		return err
+	}
+	_, err = w.Write(saltAes)
+	if err != nil {
+		return err
+	}
+	_, err = w.Write(saltHmac)
+	if err != nil {
+		return err
 	}
 
 	buf := make([]byte, BUFFER_SIZE)
@@ -85,29 +104,49 @@ func Encrypt(in io.Reader, out io.Writer, keyAes, keyHmac []byte) (err error) {
 // Decrypt the stream and verify HMAC using the given AES-CTR and SHA512-HMAC key
 // Do not trust the out io.Writer contents until the function returns the result
 // of validating the ending HMAC hash.
-func Decrypt(in io.Reader, out io.Writer, keyAes, keyHmac []byte) (err error) {
+func Decrypt(in io.Reader, out io.Writer, key []byte) (err error) {
 
 	// Read version (up to 0-255)
 	var version int8
 	err = binary.Read(in, binary.LittleEndian, &version)
 	if err != nil {
-		return
+		return err
 	}
 
 	iv := make([]byte, IV_SIZE)
 	_, err = io.ReadFull(in, iv)
 	if err != nil {
-		return
+		return err
+	}
+	saltAes := make([]byte, SALT_SIZE)
+	_, err = io.ReadFull(in, saltAes)
+	if err != nil {
+		return err
+	}
+	saltHmac := make([]byte, SALT_SIZE)
+	_, err = io.ReadFull(in, saltHmac)
+	if err != nil {
+		return err
+	}
+	keyAes, _, err := DeriveKey(key, saltAes)
+	if err != nil {
+		return err
+	}
+	keyHmac, _, err := DeriveKey(key, saltHmac)
+	if err != nil {
+		return err
 	}
 
 	AES, err := aes.NewCipher(keyAes)
 	if err != nil {
-		return
+		return err
 	}
 
 	ctr := cipher.NewCTR(AES, iv)
 	h := hmac.New(sha512.New, keyHmac)
 	h.Write(iv)
+	h.Write(saltAes)
+	h.Write(saltHmac)
 	mac := make([]byte, hmacSize)
 
 	w := out
@@ -118,7 +157,7 @@ func Decrypt(in io.Reader, out io.Writer, keyAes, keyHmac []byte) (err error) {
 	for {
 		b, err = buf.Peek(BUFFER_SIZE)
 		if err != nil && err != io.EOF {
-			return
+			return err
 		}
 
 		limit = len(b) - hmacSize
@@ -145,12 +184,12 @@ func Decrypt(in io.Reader, out io.Writer, keyAes, keyHmac []byte) (err error) {
 		outBuf := make([]byte, int64(limit))
 		_, err = buf.Read(b[:limit])
 		if err != nil {
-			return
+			return err
 		}
 		ctr.XORKeyStream(outBuf, b[:limit])
 		_, err = w.Write(outBuf)
 		if err != nil {
-			return
+			return err
 		}
 
 		if err == io.EOF {
@@ -163,4 +202,20 @@ func Decrypt(in io.Reader, out io.Writer, keyAes, keyHmac []byte) (err error) {
 	}
 
 	return nil
+}
+
+func DeriveKey(password, salt []byte) ([]byte, []byte, error) {
+	if salt == nil {
+		salt = make([]byte, SALT_SIZE)
+		if _, err := rand.Read(salt); err != nil {
+			return nil, nil, err
+		}
+	}
+
+	key, err := scrypt.Key(password, salt, 32768, 8, 1, 32)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return key, salt, nil
 }
