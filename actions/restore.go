@@ -59,14 +59,19 @@ func RestoreActionHandler(ctx domain.ExecutionContext, file string, restoreConfi
 	fmt.Printf("\n\n")
 
 	dpath, dfile := path.Split(file)
-	fmt.Println("%s --- %s", dpath, dfile)
-	encryptedExtension := dfile[len(dfile)-4:]
-	isEncrypted := encryptedExtension == ".enc" && key != nil || *key != ""
+	isEncrypted := false
 	encryptedFile := file
-	// decrypt in an hidden file
-	decryptedFile := dpath + "." + dfile[:len(dfile)-4]
-	fmt.Println(encryptedFile, decryptedFile, *key)
+	decryptedFile := ""
+	if len(dfile) > 4 {
+		encryptedExtension := dfile[len(dfile)-4:]
+		if encryptedExtension != ".enc" && key != nil && *key != "" {
+			fmt.Printf(" %s This is not a .enc file, skip deciphering\n", color.RedString("✗"))
+		}
+		isEncrypted = encryptedExtension == ".enc" && key != nil && *key != ""
+		decryptedFile = dpath + "." + dfile[:len(dfile)-4]
+	}
 
+	// decrypt in an hidden file
 	if isEncrypted {
 		err := decrypt(encryptedFile, decryptedFile, key)
 		if err != nil {
