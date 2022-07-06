@@ -1,9 +1,7 @@
 package main
 
 import (
-	"embed"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"regexp"
 	"sort"
@@ -17,9 +15,6 @@ import (
 	"github.com/fatih/color"
 	cli "github.com/jawher/mow.cli"
 )
-
-//go:embed resources/*
-var resources embed.FS
 
 func main() {
 
@@ -199,13 +194,7 @@ func main() {
 			}
 
 			/*
-			 * 5. Plug Git precommit Hook
-			 */
-
-			cmd = domain.NewCommand([]string{"pliz", "git:plug-hook", "-i"})
-			cmd.Execute()
-			/*
-			 * 6. The end
+			 * 5. The end
 			 */
 
 			fmt.Printf("\n\n%s You may now run '%s' to launch your project\n", color.GreenString("✓"), color.MagentaString("pliz start"))
@@ -331,88 +320,7 @@ func main() {
 		}
 	})
 
-	app.Command("git:plug-hook", "Register hooks in the Git repository", func(cmd *cli.Cmd) {
-		include := cmd.BoolOpt("i include-phpcs-config", false, "Includes the default phpcs config, if not already setup in the repo")
-		force := cmd.BoolOpt("f force", false, "Forces the include of the default phpcs config, even if already setup in the repo")
-
-		cmd.Action = func() {
-			fmt.Printf("%s git:plug-hook\n\n", color.MagentaString("Executing:"))
-
-			plugPhpcsConfig(*include, *force)
-			plugHook()
-		}
-	})
-
 	app.Run(os.Args)
-}
-
-func plugPhpcsConfig(include bool, force bool) {
-	if !include {
-		return
-	}
-
-	_, err := ioutil.ReadFile(".phpcs.xml.dist")
-
-	// if file already exists and there is no force flag: return
-	if err == nil && !force {
-		fmt.Printf("%s .phpcs.xml.dist already exists.\n", color.YellowString("Skipping include:"))
-		return
-	}
-
-	config, err := resources.ReadFile("resources/.phpcs.xml.dist")
-	if err != nil {
-		fmt.Printf("%s %v\n", color.RedString("Unable to read default config:"), err)
-		return
-	}
-
-	// write +wr for everybody
-	if err := ioutil.WriteFile(".phpcs.xml.dist", config, 0555); err != nil {
-		fmt.Printf("%s %v\n", color.RedString("Unable to write file:"), err)
-		return
-	}
-
-	fmt.Printf("%s ./.phpcs.xml.dist\n", color.GreenString("Successfully plugged:"))
-}
-
-func plugHook() {
-	// open the hook code from the project config
-	script, err := ioutil.ReadFile("ops/git/hooks/pre-commit")
-
-	// if it cannot be read, plug the default hook instead
-	if err != nil {
-		plugDefaultHook()
-		return
-	}
-	plugProjectHook(script)
-}
-
-func plugProjectHook(script []byte) {
-	// write +wr for everybody, +x for user
-	err := ioutil.WriteFile(".git/hooks/pre-commit", script, 0755)
-
-	if err != nil {
-		fmt.Printf("%s %v\n", color.RedString("Unable to write file:"), err)
-		return
-	}
-	fmt.Printf("%s .git/hooks/pre-commit\n", color.GreenString("Successfully plugged:"))
-}
-
-func plugDefaultHook() {
-	fmt.Printf("./ops/git/hooks/pre-commit not found, fallback to default hook\n")
-
-	script, err := resources.ReadFile("resources/git-hooks/pre-commit")
-
-	if err != nil {
-		fmt.Printf("%s %v\n", color.RedString("Unable to read default hook:"), err)
-		return
-	}
-
-	if err := ioutil.WriteFile(".git/hooks/pre-commit", script, 0755); err != nil {
-		fmt.Printf("%s %v\n", color.RedString("Unable to write file:"), err)
-		return
-	}
-
-	fmt.Printf("%s .git/hooks/pre-commit\n", color.GreenString("Successfully plugged:"))
 }
 
 func parseAndCheckConfig() {
