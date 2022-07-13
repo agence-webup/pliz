@@ -5,7 +5,9 @@ import (
 	"compress/gzip"
 	"fmt"
 	"io"
+	"log"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -18,9 +20,9 @@ import (
 )
 
 // RestoreActionHandler handle the action for 'pliz restore'
-func RestoreActionHandler(ctx domain.ExecutionContext, file string, restoreConfigFilesOpt *bool, restoreFilesOpt *bool, restoreDBOpt *bool) {
+func RestoreActionHandler(ctx domain.ExecutionContext, file string, restoreConfigFilesOpt *bool, restoreFilesOpt *bool, restoreDBOpt *bool, key *string) {
 
-	isQuiet := restoreConfigFilesOpt == nil && restoreFilesOpt == nil && restoreDBOpt == nil
+	isQuiet := !(restoreConfigFilesOpt == nil && restoreFilesOpt == nil && restoreDBOpt == nil)
 
 	if ctx.IsProd() && !isQuiet {
 		ok := prompter.YN("You're in production. Are you sure you want to continue?", false)
@@ -30,7 +32,7 @@ func RestoreActionHandler(ctx domain.ExecutionContext, file string, restoreConfi
 	}
 
 	if !isQuiet {
-		fmt.Printf(" %s ️ Choose what you want to restore:\n", color.YellowString("▶"))
+		fmt.Printf(" %s Choose what you want to restore:\n", color.YellowString("▶"))
 	}
 
 	configFilesRestoration := false
@@ -56,16 +58,72 @@ func RestoreActionHandler(ctx domain.ExecutionContext, file string, restoreConfi
 
 	fmt.Printf("\n\n")
 
+	dpath, dfile := path.Split(file)
+	isEncrypted := false
+	encryptedFile := file
+	decryptedFile := ""
+	if len(dfile) > 4 {
+		encryptedExtension := dfile[len(dfile)-4:]
+		if encryptedExtension != ".enc" && key != nil && *key != "" {
+			fmt.Printf(" %s This is not a .enc file, skip deciphering\n", color.RedString("✗"))
+		}
+		isEncrypted = encryptedExtension == ".enc" && key != nil && *key != ""
+		decryptedFile = dpath + "." + dfile[:len(dfile)-4]
+	}
+
+	// decrypt in an hidden file
+	if isEncrypted {
+		err := decrypt(encryptedFile, decryptedFile, key)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		file = decryptedFile
+	}
+
 	err := untar(ctx, file, configFilesRestoration, filesRestoration, dbRestoration)
 	if err != nil {
 		fmt.Println(err)
+		return
+	}
+
+	// remove decrypted file
+	if isEncrypted {
+		err = os.Remove(decryptedFile)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
 	}
 
 	fmt.Printf("\n %s Done\n", color.GreenString("✓"))
 }
 
-func untar(ctx domain.ExecutionContext, tarball string, configFilesRestoration bool, filesRestoration bool, dbRestoration bool) error {
+func decrypt(encryptedFile string, decryptedFile string, key *string) error {
+	infile, err := os.Open(encryptedFile)
+	if err != nil {
+		log.Fatal(err)
+	}
+	outfile, err := os.OpenFile(decryptedFile, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
 
+	err = utils.Decrypt(infile, outfile, []byte(*key))
+	infile.Close()
+	outfile.Close()
+
+	if err != nil {
+		removeDecryptedFile(decryptedFile)
+		return fmt.Errorf("Unable to decrypt the file %s\n%s\n", encryptedFile, err)
+	}
+	fmt.Printf("\n %s %s decrypted\n", color.GreenString("✓"), encryptedFile)
+
+	return nil
+}
+
+func untar(ctx domain.ExecutionContext, tarball string, configFilesRestoration bool, filesRestoration bool, dbRestoration bool) error {
 	// open the tarball
 	reader, err := os.Open(tarball)
 	if err != nil {
@@ -123,7 +181,7 @@ func untar(ctx domain.ExecutionContext, tarball string, configFilesRestoration b
 
 		// databases
 		if dbRestoration {
-			if strings.HasPrefix(header.Name, "databases/") {
+			if strings.HasPrefix(header.Name, "databases/") && !info.IsDir() {
 				dumpPath := strings.Replace(header.Name, "databases/", "", 1)
 				// separate path components to get dump info
 				comps := strings.Split(dumpPath, string(filepath.Separator))
@@ -163,7 +221,9 @@ func untar(ctx domain.ExecutionContext, tarball string, configFilesRestoration b
 }
 
 func copyFile(dest string, source io.Reader, sourceInfo os.FileInfo) error {
-
+	if sourceInfo.IsDir() {
+		return nil
+	}
 	dir := dest
 	if !sourceInfo.IsDir() {
 		dir = filepath.Dir(dest)
@@ -237,4 +297,13 @@ func restorePostgres(ctx domain.ExecutionContext, containerID string, dumpFilena
 
 	cmd := domain.NewCommand([]string{"docker", "exec", "-i", "-e", fmt.Sprintf("PGPASSWORD=\"%s\"", password), containerID, "pg_restore", fmt.Sprintf("--username=%s", user), "-d", database, "-c"})
 	cmd.ExecuteWithStdin(postgresDumpReader)
+}
+
+func removeDecryptedFile(file string) {
+	if _, err := os.Stat(file); err == nil {
+		removeErr := os.Remove(file)
+		if removeErr != nil {
+			fmt.Println(removeErr)
+		}
+	}
 }

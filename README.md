@@ -64,25 +64,8 @@ _More documentation coming later_
 
 ## Building
 
-### Requirements
-
-- Go 1.6 (for vendor support)
-- [glide](https://github.com/Masterminds/glide)
-- _Optional_: [gox](https://github.com/mitchellh/gox) for cross compilation
-
 ### Compile Pliz
 
 ```bash
-$ mkdir -p $GOPATH/src/webup
-$ git clone https://github.com/agence-webup/pliz pliz
-$ cd $GOPATH/src/webup/pliz
-$ glide install
-$ go install
-```
-
-### Cross compilation
-
-```bash
-$ cd $GOPATH/src/webup/pliz
-$ gox -osarch="linux/amd64"
+$ make
 ```
