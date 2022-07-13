@@ -80,6 +80,9 @@ func BackupActionHandler(ctx domain.ExecutionContext, backupFilesOpt *bool, back
 
 		// prepare a walk function to handle the whole hierarchy
 		walkFunc := func(filepath string, info os.FileInfo, err error) error {
+			if err != nil {
+				return fmt.Errorf("%s file or directory not found \n%s\n", filepath, err)
+			}
 			target := path.Join(filesDir, filepath)
 
 			// just create the directory
@@ -94,15 +97,6 @@ func BackupActionHandler(ctx domain.ExecutionContext, backupFilesOpt *bool, back
 		}
 
 		for _, file := range config.Get().BackupConfig.Files {
-			fmt.Println(file)
-			fileInfo, err := os.Stat(file)
-			if err != nil {
-				return fmt.Errorf("%s file or directory not found \n%s\n", file, err)
-			}
-			if !fileInfo.IsDir() {
-				return fmt.Errorf("%s is not a directory \n", file)
-			}
-
 			err = filepath.Walk(file, walkFunc)
 			if err != nil {
 				return fmt.Errorf("Unable to walk into %s\n%s\n", file, err)
