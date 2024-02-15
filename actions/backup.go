@@ -17,7 +17,7 @@ import (
 	"github.com/jhoonb/archivex"
 )
 
-func BackupActionHandler(ctx domain.ExecutionContext, backupFilesOpt *bool, backupDBOpt *bool, outputOpt *string, key *string) error {
+func BackupActionHandler(ctx domain.ExecutionContext, backupFilesOpt *bool, backupDBOpt *bool, outputOpt *string, key *string, verbose bool) error {
 
 	backupFiles := false
 	if backupFilesOpt == nil && len(config.Get().BackupConfig.Files) > 0 {
@@ -66,7 +66,7 @@ func BackupActionHandler(ctx domain.ExecutionContext, backupFilesOpt *bool, back
 			if err != nil {
 				return fmt.Errorf("Unable to create the db backup directory: %s\n", err)
 			}
-			err = makeDump(ctx, dbBackup, dir)
+			err = makeDump(ctx, dbBackup, dir, verbose)
 			if err != nil {
 				return fmt.Errorf("Unable to backup databases: %s\n", err)
 			}
@@ -163,7 +163,7 @@ func BackupActionHandler(ctx domain.ExecutionContext, backupFilesOpt *bool, back
 	return nil
 }
 
-func makeDump(ctx domain.ExecutionContext, dbBackup domain.DatabaseBackupConfig, backupDir string) error {
+func makeDump(ctx domain.ExecutionContext, dbBackup domain.DatabaseBackupConfig, backupDir string, verbose bool) error {
 
 	// fetch the container id for db
 	containerID, err := utils.GetContainerID(dbBackup.Container, ctx)
@@ -193,9 +193,9 @@ func makeDump(ctx domain.ExecutionContext, dbBackup domain.DatabaseBackupConfig,
 	}
 
 	if dbType == "mysql" || dbType == "mariadb" {
-		return mysqlDump(containerID, config.Env, backupDir, dbBackup.Databases)
+		return mysqlDump(containerID, config.Env, backupDir, dbBackup.Databases, verbose)
 	} else if dbType == "postgres" {
-		return postgresDump(containerID, config.Env, backupDir, dbBackup.Databases)
+		return postgresDump(containerID, config.Env, backupDir, dbBackup.Databases, verbose)
 	} else if dbType == "mongo" {
 		return mongoDump(path.Join(backupDir, "mongodb.archive"), containerID, config.Env, backupDir)
 	} else {
@@ -203,7 +203,7 @@ func makeDump(ctx domain.ExecutionContext, dbBackup domain.DatabaseBackupConfig,
 	}
 }
 
-func mysqlDump(containerId string, env domain.DockerContainerEnv, backupDir string, databases []string) error {
+func mysqlDump(containerId string, env domain.DockerContainerEnv, backupDir string, databases []string, verbose bool) error {
 
 	password := ""
 	if value, ok := env["MYSQL_ROOT_PASSWORD"]; ok {
@@ -220,7 +220,7 @@ func mysqlDump(containerId string, env domain.DockerContainerEnv, backupDir stri
 	}
 
 	for _, database := range mysqlDatabases {
-		cmd := domain.NewCommand([]string{"docker", "exec", "-i", containerId, "mysqldump", fmt.Sprintf("--password=%s", password), database})
+		cmd := domain.NewCommand([]string{"docker", "exec", "-i", containerId, "mysqldump", fmt.Sprintf("--password=%s", password), database}, verbose)
 
 		file, err := ioutil.TempFile(backupDir, "plizdump")
 		if err != nil {
@@ -240,7 +240,7 @@ func mysqlDump(containerId string, env domain.DockerContainerEnv, backupDir stri
 	return nil
 }
 
-func postgresDump(containerId string, env domain.DockerContainerEnv, backupDir string, databases []string) error {
+func postgresDump(containerId string, env domain.DockerContainerEnv, backupDir string, databases []string, verbose bool) error {
 
 	password := ""
 	if value, ok := env["POSTGRES_PASSWORD"]; ok {
@@ -262,7 +262,7 @@ func postgresDump(containerId string, env domain.DockerContainerEnv, backupDir s
 	}
 
 	for _, database := range postgresDatabases {
-		cmd := domain.NewCommand([]string{"docker", "exec", "-i", "-e", fmt.Sprintf("PGPASSWORD=\"%s\"", password), containerId, "pg_dump", "-Fc", fmt.Sprintf("--username=%s", user), database})
+		cmd := domain.NewCommand([]string{"docker", "exec", "-i", "-e", fmt.Sprintf("PGPASSWORD=\"%s\"", password), containerId, "pg_dump", "-Fc", fmt.Sprintf("--username=%s", user), database}, verbose)
 
 		file, err := ioutil.TempFile(backupDir, "plizdump")
 		if err != nil {
@@ -284,7 +284,7 @@ func postgresDump(containerId string, env domain.DockerContainerEnv, backupDir s
 
 func mongoDump(destination string, containerId string, env domain.DockerContainerEnv, backupDir string) error {
 
-	cmd := domain.NewCommand([]string{"docker", "exec", "-i", containerId, "mongodump", "--archive", "--gzip"})
+	cmd := domain.NewCommand([]string{"docker", "exec", "-i", containerId, "mongodump", "--archive", "--gzip"}, true)
 
 	file, err := ioutil.TempFile(backupDir, "plizdump")
 	if err != nil {

@@ -13,8 +13,9 @@ import (
 type CommandArgs []string
 
 type Command struct {
-	Name string
-	Args []string
+	Name    string
+	Args    []string
+	Verbose bool
 }
 
 func (c Command) String() string {
@@ -27,7 +28,9 @@ func (c Command) Execute() {
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
 
-	fmt.Printf("%s %s\n", color.MagentaString("Executing:"), c)
+	if c.Verbose {
+		fmt.Printf("%s %s\n", color.MagentaString("Executing:"), c)
+	}
 
 	cmd.Run()
 }
@@ -42,7 +45,9 @@ func (c Command) ExecuteWithStdin(reader io.Reader) {
 	cmd.Stdout = os.Stdout
 	cmd.Stdin = reader
 
-	fmt.Printf("%s %s\n", color.MagentaString("Executing:"), c)
+	if c.Verbose {
+		fmt.Printf("%s %s\n", color.MagentaString("Executing:"), c)
+	}
 
 	cmd.Run()
 }
@@ -69,13 +74,15 @@ func (c Command) WriteResultToFile(file *os.File) error {
 	if err := cmd.Run(); err != nil {
 		return err
 	}
-	fmt.Printf("Executing: %s\n", c)
+	if c.Verbose {
+		fmt.Printf("Executing: %s\n", c)
+	}
 	fmt.Printf("Writing to file: %s\n", file.Name())
 
 	return nil
 }
 
-func NewCommand(list []string) Command {
+func NewCommand(list []string, verbose bool) Command {
 	var name string
 	var args []string
 
@@ -87,7 +94,7 @@ func NewCommand(list []string) Command {
 		args = []string{}
 	}
 
-	return Command{Name: name, Args: args}
+	return Command{Name: name, Args: args, Verbose: verbose}
 }
 
 func NewComposeCommand(list []string, prod bool) Command {

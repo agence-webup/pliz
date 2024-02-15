@@ -23,7 +23,7 @@ func GetContainerID(container string, ctx domain.ExecutionContext) (string, erro
 }
 
 func GetContainerConfig(containerID string, ctx domain.ExecutionContext) (domain.DockerContainerConfig, error) {
-	cmd := domain.NewCommand([]string{"docker", "inspect", "--format", "{{json .Config}}", containerID})
+	cmd := domain.NewCommand([]string{"docker", "inspect", "--format", "{{json .Config}}", containerID}, true)
 	configJson, err := cmd.GetResult()
 	if err != nil {
 		fmt.Println("Unable to get the config of the 'db' container")
@@ -47,7 +47,7 @@ func GetContainerConfig(containerID string, ctx domain.ExecutionContext) (domain
 }
 
 func GetExposedPorts(containerID string, ctx domain.ExecutionContext) []string {
-	cmd := domain.NewCommand([]string{"docker", "inspect", "--format", "{{json .NetworkSettings.Ports}}", containerID})
+	cmd := domain.NewCommand([]string{"docker", "inspect", "--format", "{{json .NetworkSettings.Ports}}", containerID}, true)
 	configJson, err := cmd.GetResult()
 	if err != nil {
 		fmt.Println("Unable to get the network settings of the container")
