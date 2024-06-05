@@ -37,5 +37,6 @@ type Backup struct {
 type DatabaseBackupConfig struct {
 	Container string
 	Type      string
+	NoLock    bool
 	Databases []string
 }

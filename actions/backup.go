@@ -193,7 +193,7 @@ func makeDump(ctx domain.ExecutionContext, dbBackup domain.DatabaseBackupConfig,
 	}
 
 	if dbType == "mysql" || dbType == "mariadb" {
-		return mysqlDump(containerID, config.Env, backupDir, dbBackup.Databases, verbose)
+		return mysqlDump(containerID, config.Env, backupDir, dbBackup.Databases, dbBackup.NoLock, verbose)
 	} else if dbType == "postgres" {
 		return postgresDump(containerID, config.Env, backupDir, dbBackup.Databases, verbose)
 	} else if dbType == "mongo" {
@@ -203,7 +203,7 @@ func makeDump(ctx domain.ExecutionContext, dbBackup domain.DatabaseBackupConfig,
 	}
 }
 
-func mysqlDump(containerId string, env domain.DockerContainerEnv, backupDir string, databases []string, verbose bool) error {
+func mysqlDump(containerId string, env domain.DockerContainerEnv, backupDir string, databases []string, noLock bool, verbose bool) error {
 
 	password := ""
 	if value, ok := env["MYSQL_ROOT_PASSWORD"]; ok {
@@ -220,7 +220,12 @@ func mysqlDump(containerId string, env domain.DockerContainerEnv, backupDir stri
 	}
 
 	for _, database := range mysqlDatabases {
-		cmd := domain.NewCommand([]string{"docker", "exec", "-i", containerId, "mysqldump", fmt.Sprintf("--password=%s", password), database}, verbose)
+		cmdArgs := []string{"docker", "exec", "-i", containerId, "mysqldump", fmt.Sprintf("--password=%s", password), database}
+		if noLock {
+			cmdArgs = []string{"docker", "exec", "-i", containerId, "mysqldump", "--single-transaction", "--skip-lock-tables", fmt.Sprintf("--password=%s", password), database}
+		}
+
+		cmd := domain.NewCommand(cmdArgs, verbose)
 
 		file, err := ioutil.TempFile(backupDir, "plizdump")
 		if err != nil {

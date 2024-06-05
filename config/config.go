@@ -164,6 +164,7 @@ func (parsed parserConfig) convertToConfig(config *domain.Config) error {
 		dbBackupConfig := domain.DatabaseBackupConfig{
 			Container: parsed.Backup.Databases[i].Container,
 			Type:      parsed.Backup.Databases[i].Type,
+			NoLock:    parsed.Backup.Databases[i].NoLock,
 			Databases: parsed.Backup.Databases[i].Databases,
 		}
 		backupConfig.Databases = append(backupConfig.Databases, dbBackupConfig)
