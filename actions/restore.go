@@ -9,7 +9,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"runtime"
 	"strings"
 
 	"github.com/Songmu/prompter"
@@ -296,7 +295,7 @@ func restorePostgres(ctx domain.ExecutionContext, containerID string, dumpFilena
 	ext := filepath.Ext(dumpFilename)
 	database := strings.Replace(dumpFilename, ext, "", 1)
 
-	cmd := domain.NewCommand([]string{"docker", "exec", "-i", "-e", fmt.Sprintf("PGPASSWORD=\"%s\"", password), containerID, "pg_restore", fmt.Sprintf("--username=%s", user), "-d", database, "-c", fmt.Sprintf("--jobs=%d", runtime.NumCPU())}, verbose)
+	cmd := domain.NewCommand([]string{"docker", "exec", "-i", "-e", fmt.Sprintf("PGPASSWORD=\"%s\"", password), containerID, "pg_restore", fmt.Sprintf("--username=%s", user), "-d", database, "-c"}, verbose)
 	cmd.ExecuteWithStdin(postgresDumpReader)
 }
 
