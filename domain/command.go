@@ -98,7 +98,7 @@ func NewCommand(list []string, verbose bool) Command {
 }
 
 func NewComposeCommand(list []string, prod bool) Command {
-	name := "docker-compose"
+	name := "docker"
 
 	isProd := prod
 
@@ -109,9 +109,9 @@ func NewComposeCommand(list []string, prod bool) Command {
 		}
 	}
 
-	args := []string{}
+	args := []string{"compose"}
 	if isProd {
-		args = []string{"-f", "docker-compose.yml", "-f", "docker-compose.prod.yml"}
+		args = []string{"compose", "-f", "docker-compose.yml", "-f", "docker-compose.prod.yml"}
 	}
 
 	args = append(args, list...)
