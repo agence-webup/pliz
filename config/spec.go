@@ -29,8 +29,9 @@ type BackupSpec struct {
 }
 
 type DatabaseBackupSpec struct {
-	Container string   `yaml:"container"`
-	Type      string   `yaml:"type"`
-	NoLock    bool     `yaml:"no_lock"`
-	Databases []string `yaml:"databases"`
+	Container    string   `yaml:"container"`
+	Type         string   `yaml:"type"`
+	NoLock       bool     `yaml:"no_lock"`
+	AllDatabases bool     `yaml:"all_databases"`
+	Databases    []string `yaml:"databases"`
 }

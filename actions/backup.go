@@ -193,6 +193,9 @@ func makeDump(ctx domain.ExecutionContext, dbBackup domain.DatabaseBackupConfig,
 	}
 
 	if dbType == "mysql" || dbType == "mariadb" {
+		if dbBackup.AllDatabases {
+			return mysqlDumpAllDatabases(containerID, config.Env, backupDir, dbBackup.NoLock, verbose)
+		}
 		return mysqlDump(containerID, config.Env, backupDir, dbBackup.Databases, dbBackup.NoLock, verbose)
 	} else if dbType == "postgres" {
 		return postgresDump(containerID, config.Env, backupDir, dbBackup.Databases, verbose)
@@ -241,6 +244,36 @@ func mysqlDump(containerId string, env domain.DockerContainerEnv, backupDir stri
 
 		os.Rename(file.Name(), path.Join(backupDir, database+".sql"))
 	}
+
+	return nil
+}
+
+func mysqlDumpAllDatabases(containerId string, env domain.DockerContainerEnv, backupDir string, noLock bool, verbose bool) error {
+	password := ""
+	if value, ok := env["MYSQL_ROOT_PASSWORD"]; ok {
+		password = value
+	}
+
+	cmdArgs := []string{"docker", "exec", "-i", containerId, "mysqldump", fmt.Sprintf("--password=%s", password), "--all-databases"}
+	if noLock {
+		cmdArgs = []string{"docker", "exec", "-i", containerId, "mysqldump", fmt.Sprintf("--password=%s", password), "--all-databases", "--skip-lock-tables"}
+	}
+
+	cmd := domain.NewCommand(cmdArgs, verbose)
+
+	file, err := ioutil.TempFile(backupDir, "plizdump")
+	if err != nil {
+		fmt.Println("Unable to create a tmp file:")
+		return err
+	}
+	defer file.Close()
+
+	if err := cmd.WriteResultToFile(file); err != nil {
+		os.Remove(file.Name())
+		return err
+	}
+
+	os.Rename(file.Name(), path.Join(backupDir, "dump.sql"))
 
 	return nil
 }

@@ -57,6 +57,7 @@ backup:
     - container: db
       type: mysql # mysql|mariadb|postgres|mongo, optional. If not present, the image name is used to try to guess the type
       no_lock: false # only for mysql, add --single-transaction --skip-lock-tables arguments to avoid to lock table
-      databases:  # only used for mysql. List of databases to backup
+      all_databases: false # only used for mysql,mariadb, dump all databases
+      databases:  # only used for mysql,mariadb,postgres. List of databases to backup
         - db
         - ghost
