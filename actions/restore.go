@@ -205,7 +205,7 @@ func untar(ctx domain.ExecutionContext, tarball string, configFilesRestoration b
 							restorePostgres(ctx, containerID, comps[1], tarReader, verbose)
 						} else if strings.Contains(comps[1], "sql") {
 							// comps[1] is the filename of the dump (containing the database name, e.g. db.sql)
-							restoreMySQL(ctx, containerID, comps[1], tarReader, dbBackup.AllDatabases, verbose)
+							restoreMySQL(ctx, containerID, comps[1], tarReader, dbBackup.Type, dbBackup.AllDatabases, verbose)
 						} else {
 							fmt.Println("Unrecognized db backup.")
 						}
@@ -251,16 +251,37 @@ func restoreMongo(containerID string, mongoArchiveReader *tar.Reader) {
 	cmd.ExecuteWithStdin(mongoArchiveReader)
 }
 
-func restoreMySQL(ctx domain.ExecutionContext, containerID string, dumpFilename string, mysqlDumpReader *tar.Reader, allDatabases bool, verbose bool) {
+func restoreMySQL(ctx domain.ExecutionContext, containerID string, dumpFilename string, mysqlDumpReader *tar.Reader, dbType string, allDatabases bool, verbose bool) {
 
 	containerConfig, err := utils.GetContainerConfig(containerID, ctx)
 	if err != nil {
 		return
 	}
 
+	if dbType == "" {
+		if strings.Contains(containerConfig.Image, "mariadb") {
+			dbType = "mariadb"
+		} else {
+			dbType = "mysql"
+		}
+	}
+
+	isMariaDB := dbType == "mariadb"
+
 	password := ""
-	if value, ok := containerConfig.Env["MYSQL_ROOT_PASSWORD"]; ok {
+	if isMariaDB {
+		if value, ok := containerConfig.Env["MARIADB_ROOT_PASSWORD"]; ok {
+			password = value
+		} else if value, ok := containerConfig.Env["MYSQL_ROOT_PASSWORD"]; ok {
+			password = value
+		}
+	} else if value, ok := containerConfig.Env["MYSQL_ROOT_PASSWORD"]; ok {
 		password = value
+	}
+
+	clientCmd := "mysql"
+	if isMariaDB {
+		clientCmd = "mariadb"
 	}
 
 	ext := filepath.Ext(dumpFilename)
@@ -271,9 +292,9 @@ func restoreMySQL(ctx domain.ExecutionContext, containerID string, dumpFilename 
 		database = "db"
 	}
 
-	cmd := domain.NewCommand([]string{"docker", "exec", "-i", containerID, "mysql", fmt.Sprintf("--password=%s", password), database}, verbose)
+	cmd := domain.NewCommand([]string{"docker", "exec", "-i", containerID, clientCmd, "-u", "root", fmt.Sprintf("--password=%s", password), database}, verbose)
 	if allDatabases {
-		cmd = domain.NewCommand([]string{"docker", "exec", "-i", containerID, "mysql", fmt.Sprintf("--password=%s", password)}, verbose)
+		cmd = domain.NewCommand([]string{"docker", "exec", "-i", containerID, clientCmd, "-u", "root", fmt.Sprintf("--password=%s", password)}, verbose)
 	}
 
 	cmd.ExecuteWithStdin(mysqlDumpReader)

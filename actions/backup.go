@@ -194,9 +194,9 @@ func makeDump(ctx domain.ExecutionContext, dbBackup domain.DatabaseBackupConfig,
 
 	if dbType == "mysql" || dbType == "mariadb" {
 		if dbBackup.AllDatabases {
-			return mysqlDumpAllDatabases(containerID, config.Env, backupDir, dbBackup.NoLock, verbose)
+			return mysqlDumpAllDatabases(containerID, config.Env, backupDir, dbBackup.NoLock, verbose, dbType)
 		}
-		return mysqlDump(containerID, config.Env, backupDir, dbBackup.Databases, dbBackup.NoLock, verbose)
+		return mysqlDump(containerID, config.Env, backupDir, dbBackup.Databases, dbBackup.NoLock, verbose, dbType)
 	} else if dbType == "postgres" {
 		return postgresDump(containerID, config.Env, backupDir, dbBackup.Databases, verbose)
 	} else if dbType == "mongo" {
@@ -206,10 +206,16 @@ func makeDump(ctx domain.ExecutionContext, dbBackup domain.DatabaseBackupConfig,
 	}
 }
 
-func mysqlDump(containerId string, env domain.DockerContainerEnv, backupDir string, databases []string, noLock bool, verbose bool) error {
+func mysqlDump(containerId string, env domain.DockerContainerEnv, backupDir string, databases []string, noLock bool, verbose bool, dbType string) error {
 
 	password := ""
-	if value, ok := env["MYSQL_ROOT_PASSWORD"]; ok {
+	if dbType == "mariadb" {
+		if value, ok := env["MARIADB_ROOT_PASSWORD"]; ok {
+			password = value
+		} else if value, ok := env["MYSQL_ROOT_PASSWORD"]; ok {
+			password = value
+		}
+	} else if value, ok := env["MYSQL_ROOT_PASSWORD"]; ok {
 		password = value
 	}
 
@@ -222,10 +228,15 @@ func mysqlDump(containerId string, env domain.DockerContainerEnv, backupDir stri
 		}
 	}
 
+	dumpCmd := "mysqldump"
+	if dbType == "mariadb" {
+		dumpCmd = "mariadb-dump"
+	}
+
 	for _, database := range mysqlDatabases {
-		cmdArgs := []string{"docker", "exec", "-i", containerId, "mysqldump", fmt.Sprintf("--password=%s", password), database}
+		cmdArgs := []string{"docker", "exec", "-i", containerId, dumpCmd, "-u", "root", fmt.Sprintf("--password=%s", password), database}
 		if noLock {
-			cmdArgs = []string{"docker", "exec", "-i", containerId, "mysqldump", "--single-transaction", "--skip-lock-tables", fmt.Sprintf("--password=%s", password), database}
+			cmdArgs = []string{"docker", "exec", "-i", containerId, dumpCmd, "-u", "root", "--single-transaction", "--skip-lock-tables", fmt.Sprintf("--password=%s", password), database}
 		}
 
 		cmd := domain.NewCommand(cmdArgs, verbose)
@@ -248,15 +259,26 @@ func mysqlDump(containerId string, env domain.DockerContainerEnv, backupDir stri
 	return nil
 }
 
-func mysqlDumpAllDatabases(containerId string, env domain.DockerContainerEnv, backupDir string, noLock bool, verbose bool) error {
+func mysqlDumpAllDatabases(containerId string, env domain.DockerContainerEnv, backupDir string, noLock bool, verbose bool, dbType string) error {
 	password := ""
-	if value, ok := env["MYSQL_ROOT_PASSWORD"]; ok {
+	if dbType == "mariadb" {
+		if value, ok := env["MARIADB_ROOT_PASSWORD"]; ok {
+			password = value
+		} else if value, ok := env["MYSQL_ROOT_PASSWORD"]; ok {
+			password = value
+		}
+	} else if value, ok := env["MYSQL_ROOT_PASSWORD"]; ok {
 		password = value
 	}
 
-	cmdArgs := []string{"docker", "exec", "-i", containerId, "mysqldump", fmt.Sprintf("--password=%s", password), "--all-databases"}
+	dumpCmd := "mysqldump"
+	if dbType == "mariadb" {
+		dumpCmd = "mariadb-dump"
+	}
+
+	cmdArgs := []string{"docker", "exec", "-i", containerId, dumpCmd, "-u", "root", fmt.Sprintf("--password=%s", password), "--all-databases"}
 	if noLock {
-		cmdArgs = []string{"docker", "exec", "-i", containerId, "mysqldump", fmt.Sprintf("--password=%s", password), "--all-databases", "--skip-lock-tables"}
+		cmdArgs = []string{"docker", "exec", "-i", containerId, dumpCmd, "-u", "root", fmt.Sprintf("--password=%s", password), "--all-databases", "--skip-lock-tables"}
 	}
 
 	cmd := domain.NewCommand(cmdArgs, verbose)
