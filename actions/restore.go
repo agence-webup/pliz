@@ -200,7 +200,7 @@ func untar(ctx domain.ExecutionContext, tarball string, configFilesRestoration b
 						}
 
 						if strings.Contains(comps[1], "mongo") {
-							restoreMongo(containerID, tarReader)
+							restoreMongo(ctx, containerID, tarReader, verbose)
 						} else if strings.Contains(comps[1], ".dump") {
 							restorePostgres(ctx, containerID, comps[1], tarReader, verbose)
 						} else if strings.Contains(comps[1], "sql") {
@@ -246,8 +246,17 @@ func copyFile(dest string, source io.Reader, sourceInfo os.FileInfo) error {
 	return nil
 }
 
-func restoreMongo(containerID string, mongoArchiveReader *tar.Reader) {
-	cmd := domain.NewCommand([]string{"docker", "exec", "-i", containerID, "mongorestore", "--archive", "--gzip"}, true)
+func restoreMongo(ctx domain.ExecutionContext, containerID string, mongoArchiveReader *tar.Reader, verbose bool) {
+
+	containerConfig, err := utils.GetContainerConfig(containerID, ctx)
+	if err != nil {
+		return
+	}
+
+	cmdArgs := []string{"docker", "exec", "-i", containerID, "mongorestore", "--archive", "--gzip"}
+	cmdArgs = append(cmdArgs, mongoAuthArgs(containerConfig.Env)...)
+
+	cmd := domain.NewCommand(cmdArgs, verbose)
 	cmd.ExecuteWithStdin(mongoArchiveReader)
 }
 

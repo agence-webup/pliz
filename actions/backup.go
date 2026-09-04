@@ -200,7 +200,7 @@ func makeDump(ctx domain.ExecutionContext, dbBackup domain.DatabaseBackupConfig,
 	} else if dbType == "postgres" {
 		return postgresDump(containerID, config.Env, backupDir, dbBackup.Databases, verbose)
 	} else if dbType == "mongo" {
-		return mongoDump(path.Join(backupDir, "mongodb.archive"), containerID, config.Env, backupDir)
+		return mongoDump(path.Join(backupDir, "mongodb.archive"), containerID, config.Env, backupDir, verbose)
 	} else {
 		return fmt.Errorf("\nError: unsupported database (only MySQL, MariaDB, PostgreSQL or MongoDB)")
 	}
@@ -342,9 +342,43 @@ func postgresDump(containerId string, env domain.DockerContainerEnv, backupDir s
 	return nil
 }
 
-func mongoDump(destination string, containerId string, env domain.DockerContainerEnv, backupDir string) error {
+// mongoAuthArgs builds the authentication args for 'mongodump' and 'mongorestore',
+// from the env of the container.
+func mongoAuthArgs(env domain.DockerContainerEnv) []string {
 
-	cmd := domain.NewCommand([]string{"docker", "exec", "-i", containerId, "mongodump", "--archive", "--gzip"}, true)
+	username := ""
+	if value, ok := env["MONGO_INITDB_ROOT_USERNAME"]; ok {
+		username = value
+	}
+
+	password := ""
+	if value, ok := env["MONGO_INITDB_ROOT_PASSWORD"]; ok {
+		password = value
+	}
+
+	// no credentials: the mongo instance is not secured
+	if username == "" && password == "" {
+		return []string{}
+	}
+
+	args := []string{}
+	if username != "" {
+		args = append(args, "--username", username)
+	}
+	if password != "" {
+		args = append(args, "--password", password)
+	}
+
+	// the root user created by the mongo image lives in the 'admin' database
+	return append(args, "--authenticationDatabase", "admin")
+}
+
+func mongoDump(destination string, containerId string, env domain.DockerContainerEnv, backupDir string, verbose bool) error {
+
+	cmdArgs := []string{"docker", "exec", "-i", containerId, "mongodump", "--archive", "--gzip"}
+	cmdArgs = append(cmdArgs, mongoAuthArgs(env)...)
+
+	cmd := domain.NewCommand(cmdArgs, verbose)
 
 	file, err := ioutil.TempFile(backupDir, "plizdump")
 	if err != nil {
